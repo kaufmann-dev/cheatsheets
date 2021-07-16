@@ -1,5 +1,6 @@
 # Some useful commands:
->Make sure to put ffmpeg, ffprobe and ffplay in PATH!
+Make sure to put ffmpeg, ffprobe and ffplay in PATH!
+
 
 ### Convert image to .webp
 ```
