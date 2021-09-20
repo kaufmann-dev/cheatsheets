@@ -1,4 +1,5 @@
 # Some useful commands:
+Make sure to put ffmpeg, ffprobe and ffplay in PATH!
 
 ## Convert image to .webp
 ```
@@ -46,5 +47,3 @@ ffmpeg -i [video input] -vf transpose=1 -c:a copy [video output]
 ```
 ffmpeg -i [video input] -vf transpose=2 -c:a copy [video output]
 ```
-
-## Also make sure to put ffmpeg, ffprobe and ffplay in PATH!
