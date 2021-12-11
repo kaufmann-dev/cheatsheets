@@ -26,9 +26,9 @@ ffmpeg.exe -loop 1 -i [image input] -i [audio input] -c:v libx264 -tune stillima
 npx http-server -p 1488
 ```
 
-## Rotate/flip video with ffmpeg
+### Rotate/flip video with ffmpeg
 
-### Flip video  vertically
+#### Flip video  vertically
 ```
 ffmpeg -i [video input] -vf vflip -c:a copy [video output]
 ```
