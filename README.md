@@ -1,6 +1,11 @@
 # Useful commands
 >Make sure to put ffmpeg, ffprobe and ffplay in PATH!
 
+### NGINX error log
+```
+tail -f /var/log/nginx/nginx_error.log
+```
+
 ### Convert image to .webp
 ```
 cwebp -q 75 input.jpg -o output.webp
