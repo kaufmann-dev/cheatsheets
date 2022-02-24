@@ -3,7 +3,7 @@
 
 ### NGINX error log
 ```
-tail -f /var/log/nginx/nginx_error.log
+tail -f /var/log/nginx/error.log
 ```
 
 ### Convert image to .webp
