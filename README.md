@@ -6,9 +6,16 @@
 tail -f /var/log/nginx/error.log
 ```
 
-### Convert image to .webp
+### .webp
+
+#### Convert image to .webp
 ```
 cwebp -q 75 input.jpg -o output.webp
+```
+
+#### Convert gif to animated .webp
+```
+gif2webp -mixed input.gif -o output.webp
 ```
 
 ### Resize video to specific size (without Audio)
