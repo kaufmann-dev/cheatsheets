@@ -6,6 +6,11 @@
 tail -f /var/log/nginx/error.log
 ```
 
+### Rotate picture
+```
+magick input.webp -rotate 90 input.webp
+```
+
 ### .webp
 
 #### Convert image to .webp
