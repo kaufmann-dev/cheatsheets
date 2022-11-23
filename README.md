@@ -1,24 +1,29 @@
-# Some useful commands:
+# Useful commands
 >Make sure to put ffmpeg, ffprobe and ffplay in PATH!
 
 ### Convert image to .webp
 ```
-cwebp -q 75 [image input] -o [.webp output]
+cwebp -q 75 input.jpg -o output.webp
 ```
 
 ### Resize video to specific size (without Audio)
 ```
-resize.sh [video input] 4
+resize.sh input.mp4 4
 ```
 
 ### Resize video to specific size .webm
 ```
-python restrict.py -a -s 4 [video input]
+python restrict.py -a -s 4 input.mp4
 ```
 
 ### Create video from image and audio
 ```
-ffmpeg.exe -loop 1 -i [image input] -i [audio input] -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest [video output]
+ffmpeg.exe -loop 1 -i input.jpg -i input.mp3 -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest output.mp4
+```
+
+### Change video format
+```
+ffmpeg -i input.mp4 output.webm
 ```
 
 ### Start http-server
@@ -30,20 +35,20 @@ npx http-server -p 1488
 
 #### Flip video  vertically
 ```
-ffmpeg -i [video input] -vf vflip -c:a copy [video output]
+ffmpeg -i input.mp4 -vf vflip -c:a copy output.mp4
 ```
 
 #### Flip video horizontally
 ```
-ffmpeg -i [video input] -vf hflip -c:a copy [video output]
+ffmpeg -i input.mp4 -vf hflip -c:a copy output.mp4
 ```
 
 #### Rotate 90 degrees clockwise
 ```
-ffmpeg -i [video input] -vf transpose=1 -c:a copy [video output]
+ffmpeg -i input.mp4 -vf transpose=1 -c:a copy output.mp4
 ```
 
 #### Rotate 90 degrees counterclockwise
 ```
-ffmpeg -i [video input] -vf transpose=2 -c:a copy [video output]
+ffmpeg -i input.mp4 -vf transpose=2 -c:a copy output.mp4
 ```
