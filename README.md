@@ -1,17 +1,31 @@
 # Useful commands
->Make sure to put ffmpeg, ffprobe and ffplay in PATH!
 
-### NGINX error log
+#### NGINX error log
 ```
 tail -f /var/log/nginx/error.log
 ```
 
-### Rotate picture
+#### Rotate picture
 ```
 magick input.webp -rotate 90 input.webp
 ```
 
-### .webp
+#### Resize video to specific size (without Audio)
+```
+resize.sh input.mp4 4
+```
+
+#### Resize video to specific size .webm
+```
+python restrict.py -a -s 4 input.mp4
+```
+
+#### Start http-server
+```
+npx http-server -p 1488
+```
+
+## .webp
 
 #### Convert image to .webp
 ```
@@ -23,32 +37,22 @@ cwebp -q 75 input.jpg -o output.webp
 gif2webp -mixed input.gif -o output.webp
 ```
 
-### Resize video to specific size (without Audio)
+## ffmpeg
+
+#### Reduce video size
 ```
-resize.sh input.mp4 4
+ffmpeg -i input.mp4 -vcodec libx264 -crf 20 output.mp4
 ```
 
-### Resize video to specific size .webm
+#### Create video from image and audio
 ```
-python restrict.py -a -s 4 input.mp4
-```
-
-### Create video from image and audio
-```
-ffmpeg.exe -loop 1 -i input.jpg -i input.mp3 -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest output.mp4
+ffmpeg -loop 1 -i input.jpg -i input.mp3 -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest output.mp4
 ```
 
-### Change video format
+#### Change video format
 ```
 ffmpeg -i input.mp4 output.webm
 ```
-
-### Start http-server
-```
-npx http-server -p 1488
-```
-
-### Rotate/flip video with ffmpeg
 
 #### Flip video  vertically
 ```
