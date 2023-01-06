@@ -1,8 +1,41 @@
 # Useful commands
 
+## PHP / NGINX
 #### NGINX error log
 ```
 tail -f /var/log/nginx/error.log
+```
+
+#### Restart PHP FPM
+```
+systemctl restart php7.4-fpm
+```
+#### Run PHP FPM as root
+##### Edit pool configuration
+```
+nano /etc/php/7.4/fpm/pool.d/www.conf
+```
+```
+user = root
+group = root
+```
+
+###### append -R to the ExecStart
+```
+nano /lib/systemd/system/php7.0-fpm.service
+```
+```
+ExecStart = /usr/sbin / php - fpm7 .0--nodaemonize--fpm - config / etc / php / 7.0 / fpm / php - fpm.conf - R
+```
+
+###### Reload the configuration
+```
+systemctl daemon-reload
+```
+
+###### Start the service
+```
+systemctl start php7.4-fpm
 ```
 
 #### Rotate picture
