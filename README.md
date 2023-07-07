@@ -42,10 +42,10 @@ group = root
 
 ###### append -R to the ExecStart
 ```
-nano /lib/systemd/system/php7.0-fpm.service
+nano /lib/systemd/system/php7.4-fpm.service
 ```
 ```
-ExecStart = /usr/sbin / php - fpm7 .0--nodaemonize--fpm - config / etc / php / 7.0 / fpm / php - fpm.conf - R
+ExecStart=/usr/sbin/php-fpm7.4 --nodaemonize --fpm-config /etc/php/7.4/fpm/php-fpm.conf -R
 ```
 
 ###### Reload the configuration
