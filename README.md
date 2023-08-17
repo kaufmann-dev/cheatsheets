@@ -26,10 +26,16 @@ npx http-server -p 1488
 tail -f /var/log/nginx/error.log
 ```
 
-#### Restart PHP FPM
+#### Restart services
+###### Restart PHP FPM
 ```
 systemctl restart php7.4-fpm
 ```
+###### Restart nginx
+```
+systemctl restart nginx
+```
+
 #### Run PHP FPM as root
 ###### Edit pool configuration
 ```
