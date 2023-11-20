@@ -1,5 +1,25 @@
 # Useful commands
 
+#### Rotate picture
+```
+magick input.webp -rotate 90 input.webp
+```
+
+#### Resize video to specific size (without Audio)
+```
+resize.sh input.mp4 4
+```
+
+#### Resize video to specific size .webm
+```
+python restrict.py -a -s 4 input.mp4
+```
+
+#### Start http-server
+```
+npx http-server -p 1488
+```
+
 ## PHP / NGINX
 #### NGINX error log
 ```
@@ -11,7 +31,7 @@ tail -f /var/log/nginx/error.log
 systemctl restart php7.4-fpm
 ```
 #### Run PHP FPM as root
-##### Edit pool configuration
+###### Edit pool configuration
 ```
 nano /etc/php/7.4/fpm/pool.d/www.conf
 ```
@@ -36,26 +56,6 @@ systemctl daemon-reload
 ###### Start the service
 ```
 systemctl start php7.4-fpm
-```
-
-#### Rotate picture
-```
-magick input.webp -rotate 90 input.webp
-```
-
-#### Resize video to specific size (without Audio)
-```
-resize.sh input.mp4 4
-```
-
-#### Resize video to specific size .webm
-```
-python restrict.py -a -s 4 input.mp4
-```
-
-#### Start http-server
-```
-npx http-server -p 1488
 ```
 
 ## .webp
