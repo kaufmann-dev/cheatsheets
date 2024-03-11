@@ -21,7 +21,7 @@ npx http-server -p 1488
 ```
 
 ## PHP / NGINX
-#### NGINX error log
+#### NGINX error log (includes PHP errors)
 ```
 tail -f /var/log/nginx/error.log
 ```
