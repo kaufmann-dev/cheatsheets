@@ -26,6 +26,16 @@ npx http-server -p 1488
 tail -f /var/log/nginx/error.log
 ```
 
+#### Install ZIP extension
+###### Install package
+```
+apt install php7.4-zip
+```
+###### Restart nginx
+```
+systemctl restart nginx
+```
+
 #### Restart services
 ###### Restart PHP FPM
 ```
