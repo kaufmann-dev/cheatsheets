@@ -19,6 +19,11 @@ python restrict.py -a -s 4 input.mp4
 ```
 npx http-server -p 1488
 ```
+## GitHub
+#### Clone all repos
+gh repo list kaufmann-dev --limit 4000 | while read -r repo _; do
+  gh repo clone "$repo" "$repo"
+done
 
 ## PHP / NGINX
 #### NGINX error log (includes PHP errors)
