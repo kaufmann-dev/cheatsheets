@@ -17,7 +17,7 @@ python restrict.py -a -s 4 input.mp4
 
 #### Start http-server
 ```
-npx http-server -p 1488
+npx http-server -p 8080
 ```
 ## GitHub
 #### Clone all repos
