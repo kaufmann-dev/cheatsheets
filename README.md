@@ -7,7 +7,7 @@ magick input.webp -rotate 90 input.webp
 
 #### Resize video to specific size (without Audio)
 ```
-resize.sh input.mp4 4
+size-limit-encoder.sh input.mp4 4
 ```
 
 #### Resize video to specific size .webm
