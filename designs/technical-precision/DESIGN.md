@@ -135,9 +135,9 @@ The typography system leverages **Geist** for its exceptional legibility and mod
 This design system utilizes a **Fixed Grid** model for desktop to maintain structural integrity, transitioning to a **Fluid Grid** for mobile devices.
 
 ### Grid
-- **Columns**: 12-column system with 24px gutters
-- **Container max-width**: 1200px, centered with auto margins
-- **Edge margins**: 32px on desktop
+- **Columns**: 12-column system with `{spacing.gutter}` gutters
+- **Container max-width**: `{spacing.container-max}`, centered with auto margins
+- **Edge margins**: `{spacing.margin-edge}` on desktop
 
 ### Responsive Breakpoints
 
@@ -204,7 +204,7 @@ The shape language is disciplined and "Soft-Square." By utilizing a consistent *
 - **Position**: Sticky top-0, white background
 - **Bottom border**: 1px solid `#EAEAEA` (subtle structural line)
 - **Content**: Wordmark (bold Geist Sans) | text links | CTA buttons (ghost + primary)
-- **Container**: Max 1200px, centered, horizontal padding 32px
+- **Container**: Max `{spacing.container-max}`, centered, horizontal padding `{spacing.margin-edge}`
 - **Link style**: 14px, weight 400, `{colors.on-background}`, no underline. Hover: `{colors.text-muted}`
 
 ### Buttons
@@ -270,7 +270,7 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 - **Focus**: Border transitions to primary blue (`{colors.primary}`) with a subtle outer glow
 
 ### Lists
-- Clean rows separated by 1px horizontal lines (`#EAEAEA`)
+- Clean rows separated by 1px horizontal lines (`{colors.border-subtle}`)
 - High-density layouts preferred: 8px–12px vertical padding per row
 - Monospace for technical values within list items
 
