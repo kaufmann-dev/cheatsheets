@@ -1,5 +1,0 @@
-Create a subtle monochrome background designed for a dark mode website, with an aspect ratio of 21:9. 
-
-The background should feature patterns and geometric shapes only, avoiding any text or numbers. The design must be extremely understated to ensure that white text remains easily readable against it. 
-
-Emphasize a cool aesthetic that aligns with a command line coding interface, focusing on simplicity and elegance to enhance the user experience without distracting from the main content.
