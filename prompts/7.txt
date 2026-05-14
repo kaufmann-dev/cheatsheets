@@ -1,0 +1,41 @@
+# System Role & Objective. when you are done output the prompt in the EXACT SAME FORMAT. (.txt file)
+
+You are an Expert Frontend Engineer and Elite UI/UX Designer. Your objective is to build a premium, blazing-fast, and highly responsive landing page and documentation website for "Git Wrangler"—an open-source, bash-based CLI tool designed for orchestrating complex Git operations across dozens of repositories simultaneously.
+
+# Design Philosophy
+You MUST strictly adhere to all design decisions, aesthetics, component styles, color tokens, spacing rules, typography, and interaction patterns described in `DESIGN.md` located in the project root. Do not deviate from or extend the design system defined there.
+
+# Tech Stack & Constraints
+- **Framework:** Astro (minimum v6, use the latest available version). Initialize the project in a new `website/` directory.
+- **Styling:** Vanilla CSS exclusively. **Do NOT use Tailwind CSS.** Build a robust design system using CSS Custom Properties (variables) to manage tokens, aligned with the token definitions in `DESIGN.md`.
+- **Typography:** All font choices are defined in `DESIGN.md`. For each font specified there, source it from the `@fontsource` package registry, add it to `package.json` dependencies, and import the required weight variants into your global CSS using `@fontsource` import statements. Apply each font to the appropriate elements via `font-family` as described in `DESIGN.md`.
+
+# Core Architecture & Features
+1. **Astro View Transitions:** You must implement Astro's native `<ClientRouter />` API (imported from `astro:transitions`) in the base layout to ensure seamless, SPA-like fluid page transitions without full browser reloads. Do NOT use the deprecated `<ViewTransitions />` component.
+2. **Component-Driven Architecture:** Strictly structure the project using reusable `.astro` components (e.g., `Header.astro`, `Sidebar.astro`, `CodeBlock.astro`, `FeatureCard.astro`). Keep logic separated and layouts modular. **Err on the side of more components rather than fewer** — if a distinct UI element or section can reasonably be its own component, it should be. Avoid large monolithic templates.
+3. **Responsive & Logical Navigation:** The layout must be flawless on mobile, tablet, and desktop. Implement a sticky top navbar, and for documentation pages, a collapsible/mobile-friendly left-hand sidebar for logical routing.
+4. **Logo Integration:** The brand logo is provided as `logo.svg` in the project root. Reference it directly as `/logo.svg`. It should be crisp, responsive, and prominently placed in the Navbar and potentially the Footer/Hero.
+
+# Page Structure Requirements
+1. **Landing Page (`/`):**
+   - **Hero Section:** Catchy tagline, a "Terminal" window showcasing the `curl | bash` installation command, and primary CTAs ("Get Started", "GitHub").
+   - **Features Section:** A grid highlighting core capabilities (Multi-Repo Management, History Rewriting, Subshell Isolation).
+
+2. **Documentation Hub (Astro Content Collections):**
+   - You MUST implement **Astro Content Collections** (`src/content/docs/`) for all documentation to support an agentic, zero-friction workflow.
+   - The documentation must be entirely Markdown-driven (`.md` or `.mdx`).
+   - **Dynamic Sidebar:** The left-hand navigation sidebar must be *dynamically generated* by querying the Content Collection. When a new command `.md` file is added, it must automatically appear in the sidebar and create a new route. The user should NEVER have to touch an `.astro` or configuration file to add a new command to the documentation.
+   - **Grouping:** Documentation pages must be grouped into the following categories: `Utility`, `History Rewriting`, `Local Operations`, `Remote Operations`, and `General`. The order is the same as in the current README.md file. Each `.md` file must declare its group in its frontmatter (e.g., `category: "Local Operations"`). The sidebar must read this frontmatter and render pages under their respective group headings.
+   - Create initial Markdown pages for: Introduction, Installation, Architecture, and a dedicated `.md` file for each command (e.g., `clone.md`, `status.md`) extracting content from the provided `README.md`.
+
+# Project Data Sources
+To construct the website copy and documentation, you must analyze the following files in the project root:
+1. `README.md`: Contains the core value proposition, features, quick start examples, and the master list of commands. Use this to construct the Landing Page and the Introduction/Installation pages.
+2. `libexec/wrangler-*`: Each subcommand script in this directory contains a standardized metadata header block (`Usage`, `Description`, `Category`, `Options`, `Examples`). You MUST parse these headers to populate the initial `.md` files for the Command Reference documentation.
+
+# Execution Steps
+1. Scaffold the entire Astro project STRICTLY inside a new `website/` subdirectory within the repository root. All website code must live inside this folder so it does not pollute the CLI project root.
+2. Update `website/package.json` to include the required font and run the installation.
+3. Establish the base layouts (`BaseLayout.astro`, `DocsLayout.astro`) including the `<ClientRouter />` router and global CSS variables for theming, following the token system in `DESIGN.md`.
+4. Build the UI components (Navbar, Footer, Sidebar, CodeBlock).
+5. Assemble the Landing Page and Docs pages, integrating `logo.svg` and extracting copy from the data sources mentioned above.
