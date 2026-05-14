@@ -205,7 +205,7 @@ The shape language is disciplined and "Soft-Square." By utilizing a consistent *
 - **Bottom border**: 1px solid `#EAEAEA` (subtle structural line)
 - **Content**: Wordmark (bold Geist Sans) | text links | CTA buttons (ghost + primary)
 - **Container**: Max `{spacing.container-max}`, centered, horizontal padding `{spacing.margin-edge}`
-- **Link style**: 14px, weight 400, `{colors.on-background}`, no underline. Hover: `{colors.text-muted}`
+- **Link style**: `{typography.body-md}`, `{colors.on-background}`, no underline. Hover: `{colors.text-muted}`
 
 ### Buttons
 
@@ -225,17 +225,17 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 - Hover: opacity 90%
 
 ### Hero Section
-- **Label**: Category text — primary blue (`{colors.primary}`), Geist Mono, 11px, uppercase, tracking 0.05em
-- **Headline**: 40px, weight 700, -0.04em tracking, centered, `{colors.on-background}`
-- **Description**: 18px, weight 400, `{colors.text-muted}`, line-height 1.6, centered, max-width ~600px
+- **Label**: Category text — primary blue (`{colors.primary}`), `{typography.label-caps}`
+- **Headline**: `{typography.headline-xl}`, centered, `{colors.on-background}`
+- **Description**: `{typography.body-lg}`, `{colors.text-muted}`, centered, max-width ~600px
 - **CTA Group**: Two buttons side-by-side (primary dark + ghost), flex row with gap
 - **Code Block**: Command snippet with copy-to-clipboard icon (see Code Block below)
 
 ### Code Block
 - **Background**: `{colors.surface-subtle}` (ghost-white surface)
 - **Border**: 1px solid `{colors.border-subtle}`
-- **Radius**: 8px
-- **Font**: Geist Mono, 13px, weight 400
+- **Radius**: `{rounded.md}`
+- **Font**: `{typography.code}`
 - **Text color**: `{colors.on-background}`
 - **Prefix**: `$` character in muted gray for shell commands
 - **Copy icon**: Positioned right, subtle gray (`{colors.text-muted}`), hover darkens to `{colors.on-background}`
@@ -278,7 +278,7 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 - **Top border**: 1px solid `{colors.border-subtle}`
 - **Background**: Inherits page background (`{colors.background}`)
 - **Padding**: 24px vertical, centered within max-width container
-- **Link style**: 12px, weight 400, `{colors.text-muted}`, hover `{colors.on-background}`
+- **Link style**: `{typography.label-caps}` lowercase or similar tiny typography, `{colors.text-muted}`, hover `{colors.on-background}`
 - **Layout**: Flex row, space-between, wraps on mobile
 
 ## Do's and Don'ts
