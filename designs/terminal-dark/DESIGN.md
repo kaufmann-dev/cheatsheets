@@ -13,10 +13,10 @@ colors:
   surface-dim: "#000000"
   surface-bright: "#222222"
   surface-container-lowest: "#000000"
-  surface-container-low: "#ffffff0d"
-  surface-container: "#ffffff12"
-  surface-container-high: "#ffffff17"
-  surface-container-highest: "#ffffff1f"
+  surface-container-low: "rgba(255,255,255,0.05)"
+  surface-container: "rgba(255,255,255,0.07)"
+  surface-container-high: "rgba(255,255,255,0.09)"
+  surface-container-highest: "rgba(255,255,255,0.12)"
   on-surface: "#ffffff"
   on-surface-variant: "#a0a0a0"
   outline: "#333333"
@@ -167,12 +167,12 @@ components:
     rounded: "{rounded.sm}"
     padding: "{spacing.md}"
   modal:
-    backgroundColor: "#ffffff0a"
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
     textColor: "{colors.on-surface}"
     rounded: "{rounded.sm}"
     padding: "{spacing.2xl}"
   slide-panel:
-    backgroundColor: "#ffffff0a"
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
     textColor: "{colors.on-surface}"
     rounded: "{rounded.sm}"
     padding: "{spacing.xl}"
@@ -202,9 +202,9 @@ components:
     backgroundColor: "{colors.surface-container}"
     textColor: "{colors.primary}"
   table-row-hover:
-    backgroundColor: "#ffffff05"
+    backgroundColor: "rgba(255, 255, 255, 0.02)"
   table-row-highlighted:
-    backgroundColor: "#ffffff08"
+    backgroundColor: "rgba(255, 255, 255, 0.03)"
   category-badge:
     typography: "{typography.label-sm}"
     rounded: "{rounded.md}"
@@ -242,7 +242,7 @@ The body background uses a nearly-imperceptible radial gradient (`rgba(75,40,150
 
 ### Category Badge System
 
-Category badges auto-generate a subtle color treatment from a single hex input: `background: rgba(hex, 0.12)`, `text: hex`, `border: rgba(hex, 0.30)`. This ensures even vivid user-chosen colors remain muted within the monochrome environment.
+Category badges auto-generate a subtle color treatment from a single hex input: `background: hex(12%)`, `text: hex`, `border: hex(30%)`. This ensures even vivid user-chosen colors remain muted within the monochrome environment.
 
 ### Heatmap Scale
 
@@ -277,11 +277,11 @@ The z-index system uses clear separation: base content at 0–1, backdrop at 999
 Depth in this design system is **not** achieved through shadows or colored elevation. Instead, surfaces are differentiated by white alpha transparency layered on a pure black base.
 
 - **Level 0 (Base):** `#000000` background with subtle atmospheric radial gradients.
-- **Level 1 (Surface):** `rgba(255,255,255,0.05)` — sidebar, cards, banners, status bars.
-- **Level 2 (Elevated):** `rgba(255,255,255,0.07)` — hover states, active sidebar items.
-- **Level 3 (Interaction):** `rgba(255,255,255,0.09)` — button hover fills.
+- **Level 1 (Surface):** `{colors.surface-container-low}` — sidebar, cards, banners, status bars.
+- **Level 2 (Elevated):** `{colors.surface-container}` — hover states, active sidebar items.
+- **Level 3 (Interaction):** `{colors.surface-container-high}` — button hover fills.
 
-Borders provide additional edge definition: `#222222` (subtle), `#333333` (strong), `#555555` (hover). Shadows are used in exactly one place — modals (`0 30px 80px rgba(0,0,0,0.8)`) — combined with `backdrop-filter: blur(16px)` for a glass effect. This is the only "elevation" that breaks the flat surface model.
+Borders provide additional edge definition: `{colors.border-subtle}` (subtle), `{colors.border-strong}` (strong), `{colors.border-hover}` (hover). Shadows are used in exactly one place — modals (`0 30px 80px rgba(0,0,0,0.8)`) — combined with `backdrop-filter: blur(16px)` for a glass effect. This is the only "elevation" that breaks the flat surface model.
 
 ## Shapes
 
@@ -299,11 +299,11 @@ Buttons are rectangular, uppercase, 11px, with 0.1em letter-spacing. Default sta
 
 ### Containers & Surfaces
 
-Cards use `surface-container-low` background with a 1px `border-subtle` border. No shadows. "Create new" cards use a dashed border to distinguish their function. Modals use glass treatment: `rgba(255,255,255,0.04)` background + `backdrop-filter: blur(16px)` + deep shadow. Slide-out panels share the modal glass treatment but anchor to the right edge with `border-left` only.
+Cards use `surface-container-low` background with a 1px `border-subtle` border. No shadows. "Create new" cards use a dashed border to distinguish their function. Modals use glass treatment: `{components.modal.backgroundColor}` background + `backdrop-filter: blur(16px)` + deep shadow. Slide-out panels share the modal glass treatment but anchor to the right edge with `border-left` only.
 
 ### Inputs & Interaction
 
-Status bars communicate system state through border color variation: `border-strong` for loading, `primary` for success, `accent-negative` for error. Data table rows use subtle background changes on hover (`rgba(255,255,255,0.02)`) and for highlighted/selected items (`rgba(255,255,255,0.03)`). Inline bar charts render as 4px-height CSS elements with no border-radius.
+Status bars communicate system state through border color variation: `border-strong` for loading, `primary` for success, `accent-negative` for error. Data table rows use subtle background changes on hover (`{components.table-row-hover.backgroundColor}`) and for highlighted/selected items (`{components.table-row-highlighted.backgroundColor}`). Inline bar charts render as 4px-height CSS elements with no border-radius.
 
 ### Typography Application
 
