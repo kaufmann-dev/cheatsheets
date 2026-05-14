@@ -1,4 +1,5 @@
 ---
+version: alpha
 name: Technical Precision
 description: Functional brutalism for developer tools. Monochrome foundation, typographic identity, engineering-grade clarity.
 colors:
@@ -110,7 +111,7 @@ The palette is anchored by a high-contrast foundation of deep blacks and clinica
 - **`{colors.warning}` (#FACC15)**: Warning indicators, caution states
 - **`{colors.error}` (#F87171)**: Error states, destructive actions
 
-**Design Rationale**: The default mode is **Light**. The high-contrast nature of the tokens allows for a seamless transition to a "Dark" theme where `#111111` becomes the primary surface. The single accent color (`#0070F3`) prevents chromatic noise — additional hues are reserved exclusively for semantic status indicators (success/warning/error).
+**Design Rationale**: The default mode is **Light**. The high-contrast nature of the tokens allows for a seamless transition to a "Dark" theme where `{colors.on-background}` becomes the primary surface. The single accent color (`{colors.primary}`) prevents chromatic noise — additional hues are reserved exclusively for semantic status indicators (success/warning/error).
 
 ## Typography
 
@@ -180,7 +181,7 @@ box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.12);
 ```
 
 ### Focus States
-Active elements use a 2px offset ring in the primary blue (`#0070F3`) to ensure high visibility without altering the element's footprint.
+Active elements use a 2px offset ring in the primary blue (`{colors.primary}`) to ensure high visibility without altering the element's footprint.
 
 ### Anti-Gradient Rule
 No gradients. All depth is achieved through contrast and tonal layering. This keeps the interface feeling fast, technical, and honest.
@@ -204,7 +205,7 @@ The shape language is disciplined and "Soft-Square." By utilizing a consistent *
 - **Bottom border**: 1px solid `#EAEAEA` (subtle structural line)
 - **Content**: Wordmark (bold Geist Sans) | text links | CTA buttons (ghost + primary)
 - **Container**: Max 1200px, centered, horizontal padding 32px
-- **Link style**: 14px, weight 400, `#111111`, no underline. Hover: `#666666`
+- **Link style**: 14px, weight 400, `{colors.on-background}`, no underline. Hover: `{colors.text-muted}`
 
 ### Buttons
 
@@ -218,26 +219,26 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 **Ghost / Secondary**
 - Border: 1px solid `#EAEAEA`
 - Icon: Optional leading icon
-- Hover: `background: #F5F5F7`
+- Hover: `background: {colors.surface-subtle}`
 
 **Danger**
 - Hover: opacity 90%
 
 ### Hero Section
-- **Label**: Category text — primary blue (`#0070F3`), Geist Mono, 11px, uppercase, tracking 0.05em
-- **Headline**: 40px, weight 700, -0.04em tracking, centered, `#111111`
-- **Description**: 18px, weight 400, `#666666`, line-height 1.6, centered, max-width ~600px
+- **Label**: Category text — primary blue (`{colors.primary}`), Geist Mono, 11px, uppercase, tracking 0.05em
+- **Headline**: 40px, weight 700, -0.04em tracking, centered, `{colors.on-background}`
+- **Description**: 18px, weight 400, `{colors.text-muted}`, line-height 1.6, centered, max-width ~600px
 - **CTA Group**: Two buttons side-by-side (primary dark + ghost), flex row with gap
 - **Code Block**: Command snippet with copy-to-clipboard icon (see Code Block below)
 
 ### Code Block
-- **Background**: `#F5F5F7` (ghost-white surface)
-- **Border**: 1px solid `#EAEAEA`
+- **Background**: `{colors.surface-subtle}` (ghost-white surface)
+- **Border**: 1px solid `{colors.border-subtle}`
 - **Radius**: 8px
 - **Font**: Geist Mono, 13px, weight 400
-- **Text color**: `#111111`
+- **Text color**: `{colors.on-background}`
 - **Prefix**: `$` character in muted gray for shell commands
-- **Copy icon**: Positioned right, subtle gray (`#666666`), hover darkens to `#111111`
+- **Copy icon**: Positioned right, subtle gray (`{colors.text-muted}`), hover darkens to `{colors.on-background}`
 
 ### Terminal UI Component
 - **Background**: `#1A1A1A` (deep black)
@@ -247,26 +248,26 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 - **Purpose**: Displays terminal/CLI output in a realistic context
 
 ### Cards
-- **Background**: `#ffffff`
-- **Border**: 1px solid `#EAEAEA`
+- **Background**: `{colors.background}`
+- **Border**: 1px solid `{colors.border-subtle}`
 - **Radius**: 8px
 - **Padding**: 24px
 - **Shadow**: None. Depth is conveyed purely through border and tonal shift.
-- **Headers**: Slight gray background (`#F5F5F7`) to separate metadata from content.
+- **Headers**: Slight gray background (`{colors.surface-subtle}`) to separate metadata from content.
 
 ### Chips / Badges
 - **Font**: Geist Mono (monospace required)
-- **Background**: `#F5F5F7` for neutral status
-- **Text**: `#111111`
+- **Background**: `{colors.surface-subtle}` for neutral status
+- **Text**: `{colors.on-background}`
 - **Tinted variants**: Subtle colored backgrounds for success (green) or error (red) states
 
 ### Input Fields
-- **Background**: `#ffffff`
-- **Border**: 1px solid `#EAEAEA`
+- **Background**: `{colors.background}`
+- **Border**: 1px solid `{colors.border-subtle}`
 - **Radius**: 4px
 - **Padding**: `8px 12px`
 - **Font**: Geist Mono for data entry; Geist Sans for labels
-- **Focus**: Border transitions to primary blue (`#0070F3`) with a subtle outer glow
+- **Focus**: Border transitions to primary blue (`{colors.primary}`) with a subtle outer glow
 
 ### Lists
 - Clean rows separated by 1px horizontal lines (`#EAEAEA`)
@@ -274,18 +275,18 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 - Monospace for technical values within list items
 
 ### Footer
-- **Top border**: 1px solid `#EAEAEA`
-- **Background**: Inherits page background (`#ffffff`)
+- **Top border**: 1px solid `{colors.border-subtle}`
+- **Background**: Inherits page background (`{colors.background}`)
 - **Padding**: 24px vertical, centered within max-width container
-- **Link style**: 12px, weight 400, `#666666`, hover `#111111`
+- **Link style**: 12px, weight 400, `{colors.text-muted}`, hover `{colors.on-background}`
 - **Layout**: Flex row, space-between, wraps on mobile
 
 ## Do's and Don'ts
 
 ### Do
-- Use `#111111` instead of `#000000` for body text (softer on the eyes while maintaining high contrast).
+- Use `{colors.on-background}` instead of `#000000` for body text (softer on the eyes while maintaining high contrast).
 - Use `#000000` for buttons and wordmarks that require maximum visual weight.
-- Use 1px solid `#EAEAEA` borders on cards and containers — no shadows for standard elevation.
+- Use 1px solid `{colors.border-subtle}` borders on cards and containers — no shadows for standard elevation.
 - Keep negative tracking proportional to size: -0.04em at 40px, -0.02em at 24–32px, normal below 18px.
 - Use the weight system: 400 (reading), 500 (UI), 600 (headings), 700 (hero display only).
 - Use Geist Mono for all technical content: code, commands, metadata, status labels.
@@ -297,7 +298,7 @@ Buttons adhere to the tokens defined in the frontmatter (`button-primary`, `butt
 - Don't use gradients, decorative imagery, or illustrations.
 - Don't use pill-shaped buttons — maintain the grid-aligned 4px radius.
 - Don't use drop shadows on cards — use borders and tonal shifts instead.
-- Don't introduce new accent colors beyond `#0070F3` without justification.
+- Don't introduce new accent colors beyond `{colors.primary}` without justification.
 - Don't use positive letter-spacing on Geist Sans headlines.
 - Don't use weight 700 below 32px — it breaks the typographic hierarchy.
 - Don't use decorative or semantic colors (success/warning/error) for non-status purposes.

@@ -1,4 +1,5 @@
 ---
+version: alpha
 name: Terminal Dark
 description: A cold, authoritative dark design system for data-dense dashboard applications. Optimized for professional tools where information density, legibility, and zero decorative chrome are paramount.
 colors:
@@ -12,10 +13,10 @@ colors:
   surface-dim: "#000000"
   surface-bright: "#222222"
   surface-container-lowest: "#000000"
-  surface-container-low: "rgba(255,255,255,0.05)"
-  surface-container: "rgba(255,255,255,0.07)"
-  surface-container-high: "rgba(255,255,255,0.09)"
-  surface-container-highest: "rgba(255,255,255,0.12)"
+  surface-container-low: "#ffffff0d"
+  surface-container: "#ffffff12"
+  surface-container-high: "#ffffff17"
+  surface-container-highest: "#ffffff1f"
   on-surface: "#ffffff"
   on-surface-variant: "#a0a0a0"
   outline: "#333333"
@@ -101,12 +102,9 @@ typography:
     lineHeight: 16px
     letterSpacing: 0em
 rounded:
-  none: 0px
   sm: 0px
-  DEFAULT: 0px
-  md: 0px
+  md: 6px
   lg: 0px
-  pill: 6px
   full: 9999px
 spacing:
   unit: 8px
@@ -125,7 +123,7 @@ components:
     backgroundColor: transparent
     textColor: "{colors.secondary}"
     typography: "{typography.label-md}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: 8px 16px
     height: 32px
   button-default-hover:
@@ -135,7 +133,7 @@ components:
     backgroundColor: transparent
     textColor: "{colors.primary}"
     typography: "{typography.label-md}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: 8px 16px
     height: 32px
   button-primary-hover:
@@ -145,7 +143,7 @@ components:
     backgroundColor: transparent
     textColor: "{colors.accent-negative}"
     typography: "{typography.label-md}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: 8px 16px
   button-destructive-hover:
     backgroundColor: "{colors.accent-negative}"
@@ -154,65 +152,65 @@ components:
     backgroundColor: "{colors.surface-container}"
     textColor: "{colors.primary}"
     typography: "{typography.label-md}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: 8px 16px
   card-standard:
     backgroundColor: "{colors.surface-container-low}"
     textColor: "{colors.on-surface}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.md}"
   card-standard-hover:
     backgroundColor: "{colors.surface-container}"
   card-create:
     backgroundColor: transparent
     textColor: "{colors.secondary}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.md}"
   modal:
-    backgroundColor: rgba(255, 255, 255, 0.04)
+    backgroundColor: "#ffffff0a"
     textColor: "{colors.on-surface}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.2xl}"
   slide-panel:
-    backgroundColor: rgba(255, 255, 255, 0.04)
+    backgroundColor: "#ffffff0a"
     textColor: "{colors.on-surface}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.xl}"
     width: 560px
   status-bar-loading:
     backgroundColor: "{colors.surface-container-low}"
     textColor: "{colors.secondary}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.md}"
   status-bar-success:
     backgroundColor: "{colors.surface-container}"
     textColor: "{colors.primary}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.md}"
   status-bar-error:
     backgroundColor: "{colors.surface-container-low}"
     textColor: "{colors.accent-negative}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "{spacing.md}"
   sidebar-item:
     backgroundColor: transparent
     textColor: "{colors.secondary}"
     typography: "{typography.body-sm}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: 8px 24px
   sidebar-item-hover:
     backgroundColor: "{colors.surface-container}"
     textColor: "{colors.primary}"
   table-row-hover:
-    backgroundColor: rgba(255, 255, 255, 0.02)
+    backgroundColor: "#ffffff05"
   table-row-highlighted:
-    backgroundColor: rgba(255, 255, 255, 0.03)
+    backgroundColor: "#ffffff08"
   category-badge:
     typography: "{typography.label-sm}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.md}"
     padding: 2px 8px
   data-pill:
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.md}"
     padding: 4px 12px
 ---
 
@@ -225,27 +223,20 @@ The emotional register is **cold authority**. Users come here to make decisions 
 ### Core Principles
 
 1. **Data first, chrome never.** No decorative illustrations, no gradient backgrounds on cards, no shadows for elevation.
-2. **Sharp geometry.** Interactive elements are rectangular with zero border-radius. The only exceptions are category badges and heatmap pills, which use `rounded.pill` (6px) for legibility.
-3. **Controlled color.** The UI is predominantly dark/monochrome. Green (`accent-positive`) is used sparingly for positive states and action signals. Category badges use muted, opacity-controlled color derived from a single hex input.
+2. **Sharp geometry.** Interactive elements are rectangular with zero border-radius. The only exceptions are category badges and heatmap pills, which use `{rounded.md}` (6px) for legibility.
+3. **Controlled color.** The UI is predominantly dark/monochrome. Green (`{colors.accent-positive}`) is used sparingly for positive states and action signals. Category badges use muted, opacity-controlled color derived from a single hex input.
 4. **Density is a feature.** 50+ data points visible without scrolling on a 1080p screen.
 5. **Motion is information.** Animations only for state changes (loading, transitions), never for decoration. No number counting, no parallax, no page transitions.
-
-### Anti-Patterns
-
-- No hero illustrations or empty-state graphics — the app must be functional from first load.
-- No emoji — replaced with Unicode geometric symbols (`+`, `✕`, `✎`, `●`, `○`, `←`, `✓`, `↻`).
-- No decorative icons next to labels — uppercase letter-spaced labels provide sufficient hierarchy.
-- No rounded corners on buttons, cards, or interactive elements (category badges and heatmap pills are the sole exception).
 
 ## Colors
 
 The palette is anchored in pure black and transparency-based surfaces. There are no colored backgrounds — only white at varying alpha levels layered on `#000000`. This creates a unified, monochrome depth without the visual noise of colored elevation.
 
-- **Primary (#ffffff):** Headlines, active controls, primary actions, positive data values. White is the "loudest" element in the system.
-- **Secondary (#a0a0a0):** Body text, descriptions, inactive navigation. The default text color for non-primary content.
-- **Tertiary (#666666):** Micro-labels, timestamps, metadata. The quietest level of text hierarchy.
-- **Accent Positive (#4ade80):** Green — the only chromatic accent in default views. Used for positive return percentages, active action signals (buy dots), and highlighted badge borders.
-- **Accent Negative (#777777):** A grey that signals inactivity or negative state, deliberately avoiding red to prevent emotional trigger.
+- **Primary ({colors.primary}):** Headlines, active controls, primary actions, positive data values. White is the "loudest" element in the system.
+- **Secondary ({colors.secondary}):** Body text, descriptions, inactive navigation. The default text color for non-primary content.
+- **Tertiary ({colors.tertiary}):** Micro-labels, timestamps, metadata. The quietest level of text hierarchy.
+- **Accent Positive ({colors.accent-positive}):** Green — the only chromatic accent in default views. Used for positive return percentages, active action signals (buy dots), and highlighted badge borders.
+- **Accent Negative ({colors.accent-negative}):** A grey that signals inactivity or negative state, deliberately avoiding red to prevent emotional trigger.
 
 The body background uses a nearly-imperceptible radial gradient (`rgba(75,40,150,0.18)` at top-right, `rgba(15,110,140,0.15)` at bottom-left) layered on `#000000`. At these opacities, it reads as atmospheric texture rather than explicit color.
 
@@ -297,8 +288,10 @@ Borders provide additional edge definition: `#222222` (subtle), `#333333` (stron
 The shape language is **zero-radius terminal geometry**. All buttons, cards, inputs, sidebar items, table cells, and status bars use `border-radius: 0`. Sharp corners signal "tool" rather than "consumer app."
 
 Two exceptions exist:
-- **Category badges** use `rounded.pill` (6px) to create readable colored label chips within data tables.
-- **Heatmap data pills** also use `rounded.pill` (6px) so the color fill reads as a distinct swatch rather than a table cell background.
+- **Category badges** use `{rounded.md}` (6px) to create readable colored label chips within data tables.
+- **Heatmap data pills** also use `{rounded.md}` (6px) so the color fill reads as a distinct swatch rather than a table cell background.
+
+## Components
 
 ### Action Elements
 
@@ -315,3 +308,10 @@ Status bars communicate system state through border color variation: `border-str
 ### Typography Application
 
 Uppercase 11px labels appear above every control group. Navigation items use `body-sm` (13px). Numeric data in tables uses `data-md` (Google Sans Code, 14px) for prices and percentages, ensuring columnar alignment. Action indicators use Unicode symbols (`●`/`○`) that inherit text color and scale with font-size — zero icon library dependencies.
+
+## Do's and Don'ts
+
+- **Don't** use hero illustrations or empty-state graphics — the app must be functional from first load.
+- **Don't** use emoji — replaced with Unicode geometric symbols (`+`, `✕`, `✎`, `●`, `○`, `←`, `✓`, `↻`).
+- **Don't** use decorative icons next to labels — uppercase letter-spaced labels provide sufficient hierarchy.
+- **Don't** use rounded corners on buttons, cards, or interactive elements (category badges and heatmap pills are the sole exception).
