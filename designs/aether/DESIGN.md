@@ -137,21 +137,21 @@ The visual direction sits at the intersection of **minimalist functionalism** an
 
 ### Palette
 
-The palette is anchored by a high-contrast relationship between warm off-white (`#fafafa`) and pure black (`#000000`).
+The palette is anchored by a high-contrast relationship between warm off-white (`{colors.surface}`) and pure black (`{colors.primary}`).
 
-- **Primary (#000000):** Used for buttons, links, interactive elements, and h1 headings. The sole driver of visual authority.
-- **On-Surface (#1a1a1a):** Deep ink for headings and primary text. Nearly black but subtly softened.
-- **On-Surface-Variant (#555555):** Body text, descriptions, and secondary labels. Provides comfortable reading contrast without the intensity of full black.
-- **Surface (#fafafa):** Warm off-white page background. Softer than pure white, reduces eye strain.
-- **Outline (#747878) / Outline-Variant (#c4c7c7):** Structural borders and dividers at varying emphasis levels.
-- **Error (#ba1a1a):** Reserved for validation and error states.
+- **Primary ({colors.primary}):** Used for buttons, links, interactive elements, and h1 headings. The sole driver of visual authority.
+- **On-Surface ({colors.on-surface}):** Deep ink for headings and primary text. Nearly black but subtly softened.
+- **On-Surface-Variant ({colors.on-surface-variant}):** Body text, descriptions, and secondary labels. Provides comfortable reading contrast without the intensity of full black.
+- **Surface ({colors.surface}):** Warm off-white page background. Softer than pure white, reduces eye strain.
+- **Outline ({colors.outline}) / Outline-Variant ({colors.outline-variant}):** Structural borders and dividers at varying emphasis levels.
+- **Error ({colors.error}):** Reserved for validation and error states.
 
 ### Gradient Atmosphere
 
 The background is a **4-layer stack**:
 
-1. **Base**: `#fafafa` warm off-white
-2. **Vertical fade**: Gradient to transparent in the middle, fading back to `#fafafa` at top and bottom
+1. **Base**: `{colors.surface}` warm off-white
+2. **Vertical fade**: Gradient to transparent in the middle, fading back to `{colors.surface}` at top and bottom
 3. **Pink glow**: Radial gradient at `120% 60%`, `gradient-warm` at 30% opacity — soft sunset warmth
 4. **Blue glow**: Radial gradient at `-20% 60%`, `gradient-cool` at 30% opacity — cool counterbalance
 
@@ -194,7 +194,7 @@ The type system uses a single family — **Google Sans Flex** — across all con
 ### Container System
 
 - **Max content width**: `80ch` (~640–720px depending on font) — optimal reading measure
-- **Page padding**: `xl` (20px) horizontal, `5xl` (100px) top (accounts for fixed navbar), `3xl` (30px) bottom
+- **Page padding**: `{spacing.xl}` (20px) horizontal, `{spacing.5xl}` (100px) top (accounts for fixed navbar), `{spacing.3xl}` (30px) bottom
 - **Content container**: Flex column, centered, with `flex: 1`
 - **Content child**: Max-width constrained, fade-in-up entrance animation
 
@@ -204,15 +204,15 @@ The type system uses a single family — **Google Sans Flex** — across all con
 - Mobile: `repeat(2, 1fr)`
 - Tablet (≥640px): `repeat(3, 1fr)`
 - Desktop (≥1024px): `repeat(4, 1fr)`
-- Gap: `xl` (20px)
+- Gap: `{spacing.xl}` (20px)
 
 **Card List**:
 - Single column layout
-- Gap: `md` (10px)
-- Separators: `5px solid outline-variant` between items, `3xl` (30px) padding-bottom
+- Gap: `{spacing.md}` (10px)
+- Separators: `5px solid {colors.outline-variant}` between items, `{spacing.3xl}` (30px) padding-bottom
 
 **Horizontal Card Row**:
-- Desktop: Horizontal flex, `2xl` (24px) gap, image 250px fixed width
+- Desktop: Horizontal flex, `{spacing.2xl}` (24px) gap, image 250px fixed width
 - Mobile (≤768px): Stacks vertically, image 100% width
 
 ### Responsive Breakpoints
