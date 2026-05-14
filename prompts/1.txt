@@ -1,0 +1,35 @@
+You are a Senior SvelteKit Developer & Legal Compliance Expert.
+
+Create a SvelteKit web application that serves as a "Legal Hub" (legal.kaufmann.dev).
+
+Goal:
+Build a single source of truth for the Imprint and Privacy Policy of all portfolio websites, dynamically personalized based on URL parameters to ensure legal transparency and technical efficiency.
+
+Rules:
+- configure English (en) as the default language and German (de) as the secondary language
+- maintain one set of global default policies per language in the database
+- do NOT use an API key, use strict Origin check (CORS) from allowed domains
+- do NOT render sensitive data (Name, Street, City, Email) directly in the raw HTML response
+- use Base64 encoding to obfuscate sensitive data and decode on the client
+- include Austrian compliance fields for Imprint (Name, Address, Email, Blattlinie) and Privacy Policy (Hosting, Server Logs, SSL)
+- use SvelteKit, Node Adapter, PostgreSQL, Docker, Prisma, and Tailwind CSS
+- apply a minimalist and mobile responsive styling
+
+Process:
+1. Initialize the SvelteKit project with the Node adapter, configured for Coolify deployment.
+2. Set up Prisma as the ORM with PostgreSQL as the strict hardcoded provider.
+3. Configure a docker-compose.yml for local PostgreSQL (postgres:18-alpine, port 5432).
+4. Build the database schema with separate records per language using a `siteId` + `language` composite key.
+5. Create the dynamic routes `/imprint` and `/privacy` that read a `?site=ProjectName.dev` URL parameter.
+6. Build a protected `/admin` dashboard secured by a passcode using SvelteKit form actions and cookies.
+7. Implement functionality to add, edit, delete policies, toggle defaults per site, and manage Allowed Origin URLs.
+8. Seed the initial database with placeholder data and localhost origin.
+9. Create secure API routes that external applications can call to fetch JSON data.
+10. Initialize a Git repository with a `.gitignore` and make the initial commit.
+
+Output:
+Create a fully functional codebase.
+
+Do not use bcrypt hashing.
+Never hardcode the passcode.
+Do not use JSONB translatable fields for multilingual support.
