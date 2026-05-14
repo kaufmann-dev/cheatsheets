@@ -1,37 +1,34 @@
-Create a Bash script that rewrites commit timestamps across all managed Git repositories in the git-wrangler project. Analyze AGENTS.md and the other scripts before coding.
+You are an expert Bash developer and Git internal specialist.
 
-TOOLING
+Create a Bash script that rewrites commit timestamps across all managed Git repositories.
 
-Use git-filter-repo to rewrite commit dates. Do not use git filter-branch under any circumstances, as it is deprecated and explicitly avoided in this project. At the start of the script, check that git-filter-repo is available on the system and exit with an error if it is not found.
+Goal:
+Redistribute commit timestamps across a date range so the history looks like natural human activity rather than a bulk rewrite.
 
-PLACEMENT AND STRUCTURE
+Rules:
+- use `git-filter-repo` to rewrite commit dates
+- do NOT use `git filter-branch` under any circumstances
+- verify `git-filter-repo` is available on the system at the start
+- place the script in the `libexec/` directory without a `.sh` extension
+- include a standardized header block (`Usage`, `Description`, `Category`, `Options`)
+- use a `while IFS= read -r` loop fed by a here-string of collected paths to iterate through repositories
+- wrap each iteration in an isolated subshell
+- accept `--start-date` and `--end-date` flags in `YYYY-MM-DD` format
+- format output with project standard ANSI color codes (`\e[31m`, `\e[32m`, `\e[33m`, `\e[0m`)
+- always pass variables as arguments to `printf` using `%s`, never pipe directly into format strings
 
-Place the script in the libexec/ directory without a .sh extension. The script must begin with the required header block so that the dynamic wrangler help system can parse it correctly. The header must follow the exact format used by existing scripts in libexec/, using hash-equals separator lines and labeled fields for Usage, Description, Category, and Options. Refer to those existing scripts for the precise formatting convention before writing the header.
+Process:
+1. Discover all target `.git` directories using `find`.
+2. Implement stratified jitter: divide the date range into N slots and place each commit with up to 40% jitter.
+3. Implement bimodal time-of-day weighting: sample hours with peaks at 10am and 3pm, clamped between 7am and 10pm.
+4. Infer timezone offset from the most common offset in the commit log, formatting timestamps accordingly for `GIT_AUTHOR_DATE` and `GIT_COMMITTER_DATE`.
+5. Implement weekend dampening: nudge 65% of weekend commits to Friday evening or Monday morning.
+6. Implement micro-clustering: space same-day commits 25 to 90 minutes apart.
+7. Sort all assigned timestamps in ascending order and apply them to commits in original topological order.
+8. Print a summary showing old and new dates for each commit and require a `--confirm` flag or interactive prompt before rewriting.
 
-SCOPE AND REPOSITORY DISCOVERY
+Output:
+Provide the Bash script implementation.
 
-This script operates on multiple repositories, not a single one. Discover all target .git directories using find and collect them into a variable. Iterate through all discovered repositories using a standardized while IFS= read -r loop fed by a here-string of the collected paths. Wrap each iteration in an isolated subshell so that failures in one repository do not affect the others.
-
-FLAGS
-
-The script accepts two optional flags: --start-date and --end-date, both in YYYY-MM-DD format. If --start-date is not provided, it defaults to the date of the first commit in that repository. If --end-date is not provided, it defaults to the date of the last commit in that repository.
-
-ALGORITHM
-
-The goal is to redistribute all commit timestamps across the given date range so the history looks like natural human activity and not a bulk rewrite. The algorithm must follow these steps.
-
-Step 1 - Stratified jitter. Divide the date range into N equal slots where N is the number of commits. Place each commit at a random point within its slot, with jitter of up to 40 percent of the slot width in either direction. This ensures spread across the range without mechanical uniformity.
-
-Step 2 - Bimodal time-of-day weighting. Sample each commit hour from a bimodal distribution with peaks at approximately 10am and 3pm, with a standard deviation of roughly 2 hours for each peak. Clamp the result to between 7am and 10pm. Minutes and seconds should be fully random between 0 and 59. Infer the timezone offset from the most common offset found in the existing commit log of each repository using git log with the format flag. Fall back to the system local timezone if no consistent offset is found. All generated timestamps must be formatted with this resolved offset and stored with it in GIT_AUTHOR_DATE and GIT_COMMITTER_DATE.
-
-Step 3 - Weekend dampening. When a sampled timestamp falls on a Saturday or Sunday, nudge it to the nearest Friday evening between 6pm and 10pm, or Monday morning between 7am and 9am, with a 65 percent probability. Leave the timestamp on the weekend 35 percent of the time.
-
-Step 4 - Micro-clustering. If two or more commits land on the same calendar day after jittering, space them 25 to 90 minutes apart from each other in a random sequence. This simulates a real coding session rather than spreading them hours apart.
-
-Step 5 - Preserve commit order. After all timestamps are assigned, sort them in ascending order and apply them to commits in their original topological order, so the oldest commit receives the earliest timestamp.
-
-OUTPUT FORMATTING
-
-All output must use the project's standard ANSI color codes. Use \e[31m for errors and warnings, \e[32m for success messages, and \e[33m for informational output, and always reset with \e[0m. Never pipe variables directly into printf format strings. Always pass variables as arguments to printf using %s format specifiers.
-
-Before applying any changes to a repository, print a summary showing the old date and new date for each commit. Require either a --confirm flag or an interactive yes/no prompt before rewriting history. Print a warning using the red error color that this operation rewrites history and will require a force push to any remote.
+Do not pipe variables directly into printf format strings.
+Do not proceed without user confirmation or the `--confirm` flag.

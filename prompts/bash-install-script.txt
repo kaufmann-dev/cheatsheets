@@ -1,38 +1,31 @@
+You are an expert Bash developer and DevOps engineer.
+
 Create a production-ready install.sh script for a GitHub project.
 
-The script must work across macOS, Linux, and Windows (via Git Bash or WSL).
+Goal:
+Build a robust, multi-platform installation script that safely installs the project via a `curl | bash` pipe.
 
-REQUIREMENTS:
+Rules:
+- the script must work across macOS, Linux, and Windows (via Git Bash or WSL)
+- must be safe to run in a pipe (no interactive prompts unless absolutely necessary)
+- detect OS and architecture (amd64, arm64) and handle fallbacks
+- must be idempotent (safe to run multiple times without corrupting existing installs)
+- include basic error handling (missing curl, permission issues, failed downloads)
+- fail fast with clear error messages
+- use secure download methods (e.g., version pinning, optional checksum verification)
+- avoid unnecessary external dependencies
+- keep output minimal but informative (e.g., installing, detected OS, success)
 
-1. Installation method
-- Must support:
-  curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh | bash
-- Must be safe to run in a pipe (no interactive prompts unless absolutely necessary)
+Process:
+1. Implement OS and architecture detection logic.
+2. Verify required dependencies (like `curl`) are available.
+3. Set up safe error handling (`set -e`, fail fast).
+4. Download and install the correct binary or dependency based on the system.
+5. Print clear, formatted status messages during the installation steps.
+6. Update the `README.md` to include an Installation section with the `curl` command.
 
-2. OS + architecture support
-- Detect OS: macOS, Linux, Windows (Git Bash / WSL)
-- Detect architecture: amd64, arm64 (and fallback handling)
-- Download/install correct binary or dependency based on system
+Output:
+Provide the `install.sh` script and the `README.md` addition.
 
-3. Reliability + safety
-- Must be idempotent (safe to run multiple times)
-- Must not corrupt existing installs
-- Include basic error handling (missing curl, permission issues, failed download)
-- Fail fast with clear error messages
-
-4. Curl install best practices
-- Analyze and implement the most robust curl-based installation pattern
-- Prefer secure download methods (e.g., version pinning, optional checksum verification if applicable)
-- Avoid unnecessary external dependencies
-- Optimize for speed and reliability
-
-5. Output behavior
-- Script should print clear status messages (installing, detected OS, success, etc.)
-- Keep output minimal but informative
-
-6. README update requirement
-After generating the install logic, update README.md to include:
-- Installation section
-- The curl install command:
-  curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/install.sh | bash
-- Short explanation of what the installer does
+Do not prompt for interactive input.
+Do not assume `root` privileges unless strictly necessary.
