@@ -1,0 +1,76 @@
+Step 1: Organize and Rename the Scripts
+
+Create a libexec/ directory in the root of the repository. Move all existing .sh files into libexec/. Rename them to drop the .sh extension and use the wrangler-<subcommand> naming convention. For example, pull-repositories.sh becomes libexec/wrangler-pull.
+
+
+Step 2: Update Script Headers
+
+Inside each renamed script in libexec/, update the header block as follows. Do NOT change any functional code or logic inside these scripts.
+
+Each script must have a header block delimited by "# ====" lines at the top, containing the following three fields:
+
+    # Usage: wrangler <subcommand> ...
+    # Description: <one-line summary>
+    # Category: <group name>
+
+The Usage line must be updated from the old ./script.sh syntax to the new wrangler <subcommand> syntax.
+
+The Description line must contain a single-line summary of what the subcommand does.
+
+The Category line must contain a logical grouping label such as "Remote Operations", "Local Operations", or "Utility". Assign categories that reflect the actual purpose of each script.
+
+Example of a complete header block:
+
+    # ====
+    # Usage: wrangler pull [options]
+    # Description: Pulls the latest changes for all tracked repositories
+    # Category: Remote Operations
+    # ====
+
+
+Step 3: Create the wrangler Dispatcher
+
+Create a new bash script named wrangler (no extension) in the root directory and make it executable with chmod +x wrangler. This dispatcher accepts no flags of its own. It must behave as follows.
+
+First, dynamically resolve its own installation directory using:
+    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+Second, intercept the first argument as the subcommand. If no argument is provided, default to "help".
+
+Third, validate that the subcommand contains no / or \ characters. If it does, print a red error message and exit.
+
+Fourth, dynamically construct the target filename:
+    target="$DIR/libexec/wrangler-$subcommand"
+
+If the target file exists, hand off execution using:
+    exec bash "$target" "${@:2}"
+
+This replaces the dispatcher process with the subcommand, ensuring all remaining arguments, exit codes, and signals are passed through perfectly.
+
+If the target subcommand does not exist, print a red error message and suggest running wrangler help.
+
+
+Step 4: Create the Help System
+
+Help is handled exclusively through wrangler help. Subcommands do not implement --help, -h, or any help flags of their own. If a user passes those flags they are forwarded to the subcommand unchanged and will produce an "unknown option" error as normal. The only supported help interface is:
+
+    wrangler or wrangler help  ->  top-level menu
+    wrangler help <subcommand> ->  per-subcommand documentation
+
+Create libexec/wrangler-help to implement this. The script must begin with its own standard # ==== header block including Usage, Description, and Category fields, so that wrangler help help works correctly and the help system is self-documenting.
+
+The script must resolve its own directory using:
+    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+This means $DIR points to the libexec/ directory where wrangler-help itself resides.
+
+Top-Level Help (wrangler help with no arguments): Dynamically discover all available subcommands by listing $DIR/wrangler-* (that is, sibling files in the same libexec/ directory). For each file, parse its header block to extract the Description and Category values. Print a formatted help menu dynamically grouped by category. This way the menu stays accurate automatically when subcommands are added or removed. When iterating over category names, use a while IFS= read -r loop rather than a basic for loop to correctly handle category names that contain spaces such as Remote Operations.
+
+Subcommand Help (wrangler help <subcommand>): The script accepts an optional first argument specifying the subcommand to document. Dynamically extract documentation from $DIR/wrangler-<subcommand> by parsing the text between the # ==== boundaries using awk, stripping the # prefix, and printing it cleanly. If the target script does not exist, print a red error message.
+
+
+Step 5: Update Documentation
+
+Rewrite README.md to document wrangler as the single unified tool. Update all examples to use the wrangler <subcommand> syntax. Note that subcommands live in libexec/ and that per-subcommand documentation is accessed via wrangler help <subcommand>.
+
+Update AGENTS.md to reflect the new architecture. Replace all references to .sh files with the libexec/wrangler-<subcommand> naming convention so future agents understand the layout correctly. Document the script header format including the Category and Description fields so future agents know to include them when adding new subcommands.

@@ -1,0 +1,131 @@
+You are a bash performance expert. Analyze all of the scripts in this repository and rewrite them to be as fast as possible. For this rewrite, only the rules in AGENTS.md that do not affect performance apply. When you are ready, the scripts should still work across macOS, Linux, and Windows (via Git Bash / WSL).
+
+---
+
+### STEP 1 — DISCOVER & INVENTORY
+
+Before touching any code:
+1. Find all relevant shell scripts in this repository. Note that for `git-wrangler`, these are specifically:
+   - The root dispatcher script: `wrangler`
+   - All subcommand scripts located in the `libexec/` directory (e.g., `libexec/wrangler-clone`, `libexec/wrangler-status`). Note that these do not have `.sh` extensions.
+2. List them all with their paths.
+3. Identify which scripts call other scripts in the repo to map the call graph so dependent scripts are rewritten in the right order.
+
+---
+
+### STEP 2 — READ AGENTS.md
+
+Read `AGENTS.md` in full. Extract every rule that does NOT affect runtime performance (e.g., naming conventions, file headers, comment style, log formatting, exit code conventions). These rules must be respected in the rewrite. 
+
+Ignore any `AGENTS.md` rules that would hurt performance (for example, you may need to override Rule 8: Subshell Isolation if it causes excessive forks during large repository iterations). List the rules you are keeping and the ones you are overriding, with a one-line reason for each override.
+
+---
+
+### STEP 3 — PERFORMANCE AUDIT (PER SCRIPT)
+
+For each script, report every performance issue found. For each issue:
+- **File**: path to the script
+- **Line(s)**: affected line numbers
+- **Problem**: what is slow and why
+- **Fix**: the faster alternative
+
+Audit every script against all of the following:
+
+#### Unnecessary Forks & Subshells
+- `$(cat file)` instead of redirecting stdin directly
+- `$(echo ...)` instead of a variable or printf
+- `$(basename ...)` / `$(dirname ...)` instead of parameter expansion (`${var##*/}`, `${var%/*}`)
+- `$(pwd)` inside loops — cache before the loop (`ORIG_DIR="$PWD"`)
+- Subshells created by pipes when process substitution or a single tool would do
+- Functions called in subshells unnecessarily
+
+#### Useless External Commands
+- Useless use of `cat` — replace with `< file` redirection
+- `grep | awk` — awk handles filtering and transformation in one pass
+- `grep | cut` / `grep | sed` — consolidate into awk or a single sed expression
+- `wc -l` on command output — count in awk or using `grep -c` instead
+- `echo "..." | command` — use herestring (`<<< "..."`) instead
+- `xargs` wrapping a simple command that accepts multiple args natively
+- `seq` inside a loop — use C-style `for ((i=0; i<n; i++))`
+- Repeated calls to `gh`, `git rev-parse`, or other tools in a loop — look for ways to batch them
+
+#### Loop Inefficiency
+- External commands called per-iteration that could be vectorized into one awk/sed/grep call
+- `while read` over large datasets where awk processes the data natively
+- `find` commands executed repeatedly for each candidate inside a loop
+- Line-by-line search/replace — use sed/awk on the whole file
+- Values recomputed every iteration that can be hoisted out of the loop
+
+#### Pipeline Overhead
+- Long pipelines collapsible into a single awk/perl pass
+- Pipelines inside loops — move the loop body into awk
+- `sort | uniq` — replace with `sort -u`
+- `cat file | sort` — replace with `sort file`
+- `grep -v | grep` — combine into one grep or awk expression
+
+#### I/O Inefficiency
+- The same file read more than once — read once into a variable or array
+- Writes inside a loop — buffer and write once after the loop
+- `>>` append inside a loop — open the file descriptor once with `exec 3>>file`
+- Unbuffered output in high-frequency loops — batch with printf
+
+#### String & Arithmetic Operations
+- `expr` for arithmetic — use `(( ))` or `$(( ))` (no fork)
+- `bc` for simple integer math — use `$(( ))`
+- External tools for string ops that bash parameter expansion handles natively
+- Repeated substring extraction in a loop — precompute outside
+
+#### Process & Parallelism Opportunities
+- Sequential independent operations — run with `&` + `wait`
+- `find -exec cmd {} \;` (one fork per file) — replace with `find -exec cmd {} +`
+- Single-threaded processing of independent chunks — use `xargs -P` or `parallel`
+
+---
+
+### STEP 4 — CROSS-PLATFORM CONSTRAINTS
+
+Every rewrite must work on macOS, Linux, and Windows (Git Bash / WSL). Apply these constraints while still achieving the maximum possible speedup:
+
+- **No GNU-only flags**: avoid `grep -P`, `sed -i` without an extension arg, `date -d`, `stat --format`, `readlink -f`, `sort --parallel`, `cp --reflink`, `head -n -N` (use `sed` or `awk` to exclude trailing lines on macOS)
+- **awk**: use only POSIX awk — no GNU gawk-specific extensions
+- **No `/proc`** filesystem access — not available on macOS or Git Bash
+- **No `mapfile` / `readarray`** unless the script already requires bash 4+ and that requirement is documented
+- **Paths**: use forward slashes; never hardcode `/usr/local/bin` — use `command -v` to locate tools
+- **mktemp**: use `mktemp` without GNU-only template syntax; always clean up with a trap
+- **`[[ ]]`** is fine — all three targets support bash; avoid `[ ]` where `[[ ]]` is clearer and faster
+- **Parallel jobs**: default to a self-tuning job count: `$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)`
+
+---
+
+### STEP 5 — REWRITE ALL SCRIPTS
+
+Rewrite every script, applying all fixes from Step 3 within the constraints of Step 4 and the applicable AGENTS.md rules from Step 2.
+
+For each rewritten file:
+- Preserve all original functionality and output exactly
+- Add a short comment on each changed line: `# PERF: <reason>`
+- Do not change anything that does not affect performance or violate an applicable AGENTS.md rule
+
+Output each rewritten script clearly labelled with its path.
+
+---
+
+### STEP 6 — UPDATE AGENTS.md
+
+Update the AGENTS.md file accordingly. If any rules were overridden for performance reasons, clearly document the new performance-first best practices in AGENTS.md.
+
+---
+
+### STEP 7 — CHANGE SUMMARY
+
+After all rewrites, provide one consolidated table across every script:
+
+| File | Line(s) | Original Pattern | Replacement | Estimated Speedup |
+|------|---------|-----------------|-------------|-------------------|
+| ...  | ...     | ...             | ...         | ...               |
+
+Then give an overall summary:
+- How many scripts were modified
+- The single highest-impact change across the whole repo
+- Any scripts that had no performance issues
+- Any platform-specific workarounds applied and why
