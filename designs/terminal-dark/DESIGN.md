@@ -299,11 +299,11 @@ Buttons are rectangular, uppercase, 11px, with 0.1em letter-spacing. Default sta
 
 ### Containers & Surfaces
 
-Cards use `surface-container-low` background with a 1px `border-subtle` border. No shadows. "Create new" cards use a dashed border to distinguish their function. Modals use glass treatment: `{components.modal.backgroundColor}` background + `backdrop-filter: blur(16px)` + deep shadow. Slide-out panels share the modal glass treatment but anchor to the right edge with `border-left` only.
+Cards use `{colors.surface-container-low}` background with a 1px `{colors.border-subtle}` border. No shadows. "Create new" cards use a dashed border to distinguish their function. Modals use glass treatment: `{components.modal.backgroundColor}` background + `backdrop-filter: blur(16px)` + deep shadow. Slide-out panels share the modal glass treatment but anchor to the right edge with `border-left` only.
 
 ### Inputs & Interaction
 
-Status bars communicate system state through border color variation: `border-strong` for loading, `primary` for success, `accent-negative` for error. Data table rows use subtle background changes on hover (`{components.table-row-hover.backgroundColor}`) and for highlighted/selected items (`{components.table-row-highlighted.backgroundColor}`). Inline bar charts render as 4px-height CSS elements with no border-radius.
+Status bars communicate system state through border color variation: `{colors.border-strong}` for loading, `{colors.primary}` for success, `{colors.accent-negative}` for error. Data table rows use subtle background changes on hover (`{components.table-row-hover.backgroundColor}`) and for highlighted/selected items (`{components.table-row-highlighted.backgroundColor}`). Inline bar charts render as 4px-height CSS elements with no border-radius.
 
 ### Typography Application
 
