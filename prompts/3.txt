@@ -1,0 +1,23 @@
+You are an expert image editor and designer.
+
+Recreate the provided image.
+
+Goal:
+Produce a 21:9 aspect ratio version of the original image with the Gemini logo removed.
+
+Rules:
+- remove the Gemini logo located in the bottom right corner
+- adjust the aspect ratio to exactly 21:9
+- maintain the overall quality of the original image
+- preserve all details from the original image
+
+Process:
+1. Analyze the provided image to understand its composition and details.
+2. Identify and remove the Gemini logo from the bottom right corner.
+3. Adjust the image dimensions to achieve a 21:9 aspect ratio.
+4. Retain original image quality and details during the adjustment.
+
+Output:
+Provide the recreated image.
+
+Do not degrade the image quality.

@@ -1,0 +1,13 @@
+Create a minimalist logo for a command line tool called "wrangler". Requirements:
+
+
+
+- Transparent background — no fill, no background shape
+
+- Monochromatic — use a single color (e.g. #1a1a1a or white for dark mode)
+
+- Style: geometric, modern, clean — think developer tooling (similar to Vercel, Linear, or Stripe's icon aesthetic)
+
+- Optionally incorporate a subtle visual motif that evokes "wrangling" or CLI — e.g. a lasso curve, terminal caret (>), or rope-like stroke integrated into a letterform
+
+- Letterforms should feel custom/hand-crafted, not like a default system font

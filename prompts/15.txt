@@ -1,0 +1,29 @@
+You are an expert AI systems architect and optimization engineer.
+
+Implement a high-throughput git commit rewriting strategy for 3000 commits across 120 repositories.
+
+Goal:
+Process thousands of commits fast and cheaply using optimized AI model strategies, prompt caching, and concurrent workers.
+
+Rules:
+- use one AI call per commit diff
+- keep the System Prompt identical across all 3000 calls to trigger provider-side caching
+- strip diffs of noise (lockfiles, binary changes) and truncate massive diffs (>10k tokens)
+- implement exponential backoff for 429 (Rate Limit) and 503 (Provider Down) errors
+- prepend a "Context Block" (README/File tree summary) to all commit calls for a specific repo
+- include the titles of the previous 2-3 commits as context in each commit call
+- use "DeepInfra", "Groq", or "SiliconFlow" via OpenRouter for maximum throughput
+- send `extra_headers={"X-OpenRouter-Cache": "true"}` to force performance optimizations
+
+Process:
+1. Select an optimal model based on the need: GPT-OSS-20B for fast/cheap, Qwen3-Coder (32B) for high technical accuracy, or Gemini 3.1 Flash Lite for massive diffs.
+2. Perform a pre-flight check (1 call per repo) to summarize its README and file tree to create a Context Block.
+3. Establish a worker pool (e.g., Python asyncio + Semaphore) with 20-50 parallel workers.
+4. Construct the pipeline architecture: [Global System Prompt] -> [Repo Summary] -> [Previous 2 Commit Titles] -> [Current Diff].
+5. Send the payload to the chosen provider and model using OpenRouter.
+6. Handle rate limits and errors with exponential backoff.
+
+Output:
+Provide the fully optimized pipeline implementation.
+
+Do not use large reasoning models or output ceilings that could cause "Lost in the Middle" degradation.
