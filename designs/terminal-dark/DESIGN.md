@@ -253,8 +253,8 @@ For data-dense grid views requiring chromatic encoding, a six-step diverging sca
 The design system uses a dual-font strategy: **Google Sans** for all UI text and **Google Sans Code** for numeric data, codes, and timestamps.
 
 - **Display/Headline sizes** use light weight (400) with negative letter-spacing (-0.02em to -0.01em) for a clean, editorial look at large sizes.
-- **Labels** (11px, `label-md`) are the backbone of the UI. They are always uppercase with 0.1em letter-spacing and appear above every control group. This convention eliminates placeholder text, creates consistent vertical rhythm, and makes the interface scannable at a glance.
-- **Data typography** uses `Google Sans Code` (monospace) for prices, percentages, ranks, tickers, and timestamps — ensuring columnar alignment in tables.
+- **Labels** (`{typography.label-md}`) are the backbone of the UI. They are always uppercase with 0.1em letter-spacing and appear above every control group. This convention eliminates placeholder text, creates consistent vertical rhythm, and makes the interface scannable at a glance.
+- **Data typography** uses `{typography.data-md}` and `{typography.data-sm}` for prices, percentages, ranks, tickers, and timestamps — ensuring columnar alignment in tables.
 
 Font weight is deliberately restrained. Weight 400 dominates; 500 and 600 are reserved for emphasis (modal headings, active states). Heavy weights (700) are avoided to maintain the understated terminal aesthetic.
 
@@ -295,7 +295,7 @@ Two exceptions exist:
 
 ### Action Elements
 
-Buttons are rectangular, uppercase, 11px, with 0.1em letter-spacing. Default state: transparent background + 1px border. Hover state: inverts to solid white fill with black text. Segmented controls (for mutually exclusive choices like filters and view modes) collapse borders between adjacent buttons using `margin-left: -1px`; the active button gets `z-index: 2` to render its border above neighbors.
+Buttons are rectangular, uppercase, `{typography.label-md}`, with 0.1em letter-spacing. Default state: transparent background + 1px border. Hover state: inverts to solid white fill with black text. Segmented controls (for mutually exclusive choices like filters and view modes) collapse borders between adjacent buttons using `margin-left: -1px`; the active button gets `z-index: 2` to render its border above neighbors.
 
 ### Containers & Surfaces
 
@@ -307,7 +307,7 @@ Status bars communicate system state through border color variation: `{colors.bo
 
 ### Typography Application
 
-Uppercase 11px labels appear above every control group. Navigation items use `body-sm` (13px). Numeric data in tables uses `data-md` (Google Sans Code, 14px) for prices and percentages, ensuring columnar alignment. Action indicators use Unicode symbols (`●`/`○`) that inherit text color and scale with font-size — zero icon library dependencies.
+Uppercase `{typography.label-md}` labels appear above every control group. Navigation items use `{typography.body-sm}`. Numeric data in tables uses `{typography.data-md}` for prices and percentages, ensuring columnar alignment. Action indicators use Unicode symbols (`●`/`○`) that inherit text color and scale with font-size — zero icon library dependencies.
 
 ## Do's and Don'ts
 

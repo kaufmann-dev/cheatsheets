@@ -157,10 +157,10 @@ The background is a **4-layer stack**:
 
 ```css
 :root {
-    --background: linear-gradient(to bottom, #FAFAFA 0%, transparent 30%, transparent 70%, #FAFAFA 100%),
-        radial-gradient(ellipse at 120% 60%, #ff255030 0%, transparent 60%),
-        radial-gradient(ellipse at -20% 60%, #55CDFC50 0%, transparent 60%),
-        #fafafa;
+    --background: linear-gradient(to bottom, {colors.surface} 0%, transparent 30%, transparent 70%, {colors.surface} 100%),
+        radial-gradient(ellipse at 120% 60%, {colors.gradient-warm}30 0%, transparent 60%),
+        radial-gradient(ellipse at -20% 60%, {colors.gradient-cool}50 0%, transparent 60%),
+        {colors.surface};
 }
 ```
 
