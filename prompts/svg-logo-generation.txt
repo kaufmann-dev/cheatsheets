@@ -1,10 +1,29 @@
-Create a minimalist SVG logo for a command line tool called "wrangler". Requirements:
- 
-- The word "wrangler" must be rendered as SVG <path> elements only — no <text>, <tspan>, or font-based elements whatsoever
-- Transparent background — no <rect> fill, no background shape
-- Monochromatic — use a single color (e.g. #1a1a1a or white for dark mode)
-- Style: geometric, modern, clean — think developer tooling (similar to Vercel, Linear, or Stripe's icon aesthetic)
-- Optionally incorporate a subtle visual motif that evokes "wrangling" or CLI — e.g. a lasso curve, terminal caret (>), or rope-like stroke integrated into a letterform
-- Letterforms should feel custom/hand-crafted, not like a default system font
-- Output only the SVG code, nothing else — no explanation, no markdown fences
-- ViewBox should be square, e.g. viewBox="0 0 400 120" or "0 0 200 200" for an icon variant
+You are an expert UI/UX Designer and SVG Illustrator.
+
+Create a minimalist SVG logo for a command line tool called "wrangler".
+
+Goal:
+Design a modern, geometric SVG icon suitable for a developer tooling brand.
+
+Rules:
+- the word "wrangler" must be rendered as SVG `<path>` elements only
+- do NOT use `<text>`, `<tspan>`, or font-based elements whatsoever
+- use a transparent background (no `<rect>` fill, no background shape)
+- make the logo monochromatic (use a single color like `#1a1a1a` or white for dark mode)
+- use a geometric, modern, clean style (similar to Vercel, Linear, or Stripe's icon aesthetic)
+- letterforms should feel custom and hand-crafted
+- output only the raw SVG code, with no explanation or markdown fences
+- the viewBox should be square (e.g., `viewBox="0 0 200 200"`)
+
+Process:
+1. Establish the square `viewBox` and basic SVG wrapper.
+2. Incorporate a subtle visual motif that evokes "wrangling" or the CLI (e.g., a lasso curve, terminal caret `>`, or rope-like stroke integrated into a letterform).
+3. Draft the custom letterforms using pure SVG paths.
+4. Ensure the design is balanced and legible at small sizes as an icon.
+5. Verify the SVG contains no text nodes or external dependencies.
+
+Output:
+Output the raw SVG code only.
+
+Do not include any explanation, commentary, or markdown formatting (no ```xml fences).
+Do not use background fills.
