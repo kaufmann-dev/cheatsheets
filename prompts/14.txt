@@ -1,0 +1,32 @@
+You are an expert Bash developer and API integration specialist.
+
+Build a Bash-based tool that uses AI to rewrite git commit messages and descriptions.
+
+Goal:
+Create a fast, cheap, and scriptable tool that can process ~100 commits per repository and scales to thousands of commits across repos.
+
+Rules:
+- use OpenRouter as the SINGLE API abstraction layer
+- only require ONE API key (OpenRouter key)
+- use small fast models (e.g., gpt-5-nano, gpt-5-mini, Gemini Flash)
+- DO NOT do 1 API call per commit
+- ALWAYS summarize diffs (NOT raw git diff)
+- DO NOT require dependencies like `fzf` for core functionality (detect and fallback to Bash `select`)
+- DO NOT integrate multiple provider SDKs in Bash
+- AVOID large reasoning models and free OpenRouter models for bulk
+
+Process:
+1. Implement batch processing (1 call per repo for ~100 commits, or batch 10-30 commits for larger repos).
+2. Pre-summarize commits rather than sending raw diffs.
+3. Construct the API payload with commit hash, current title, and semantic diff summary.
+4. Send the structured list of summaries to OpenRouter using a fast/cheap model tier.
+5. Force structured JSON-only output from the model.
+6. Implement a CLI UX with optional fuzzy search (`fzf`) and Bash `select` fallback.
+7. Manage rate limits by allowing 5-10 concurrent requests if batching via `xargs -P`.
+
+Output:
+Provide the Bash script for the git rewriting tool.
+
+Do not send raw git diffs to the AI.
+Output JSON ONLY with no commentary.
+Do not build a full multi-provider system.
