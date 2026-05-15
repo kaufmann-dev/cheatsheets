@@ -4,7 +4,7 @@
 
 ## UI & Styling
 - tailwindcss
-- shadcn.svelte
+- shadcn-svelte
 - @iconify/tailwind4
 - mode-watcher
 
