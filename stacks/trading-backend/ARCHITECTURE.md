@@ -28,6 +28,7 @@
 
 - alpaca api
 - finnhub api
+- FMP
 
 ## AI Coach
 
