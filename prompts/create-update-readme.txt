@@ -25,6 +25,6 @@ A professional README.md file following this structure:
 4. Technology Stack
 5. Prerequisites and Installation
 6. Usage Examples
-7. License
+7. License (only if there is one in the repo)
 
-Do not use placeholders; prompt the user if critical information is missing.
+Do not use placeholders; prompt the user if critical information is missing.
