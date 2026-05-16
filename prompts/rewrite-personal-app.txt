@@ -1,0 +1,48 @@
+**Project Rewrite Prompt — "Clean Slate"**
+
+Before implementing anything: scan and document every feature currently in the project. Present a full structural overview of everything implemented. I will then confirm what to keep, cut, or carry forward before a single line is written.
+
+---
+
+**Rewrite Scope**
+
+Perform a complete rewrite of the project — no backwards compatibility required. Take structural inspiration from the existing project but fully rebuild both structure and design according to DESIGN.md and ARCHITECTURE.md. The result must be extremely modular and easy to change. Keep all legacy code in a /legacy folder for reference during the rewrite; I will delete it once the new version is complete.
+
+---
+
+**Tech Stack**
+
+Follow ARCHITECTURE.md for the tech stack. If something defined there does not make sense in a specific context, flag it and propose an alternative — do not blindly follow it. Use PostgreSQL as the sole data store (no JSON file stores); use DATABASE_URL as the internal Postgres URL env var. Use npm. The project will be deployed via Coolify; the database runs in a separate instance within the same project and is accessed via the internal Postgres URL.
+
+---
+
+**Authentication & Access**
+
+The entire website must be hidden behind a login screen — nothing is publicly accessible. All routes require authentication. Use Better Auth for this; if a specific case (e.g. admin-only sections) is not well-served by Better Auth, you may substitute something more appropriate — flag it when you do.
+
+---
+
+**Features to Keep**
+
+- **Diary** — the single and only place for articles, ramblings, and written content. Replaces texts, diary, collections, PDFs, and reflections entirely. No PDF file support. Implement end-to-end encryption on the diary exactly as defined in ARCHITECTURE.md. If existing diary content is lost during encryption implementation that is acceptable — I will restore it manually. The diary is admin-only.
+- **Lists** — keep as-is.
+- **Diagrams** — keep as-is.
+- **Family Tree** — keep, but completely rewrite it and make it significantly better.
+- **Day Counters** — keep, but extract them from Tools and make them standalone first-class features.
+
+**Features to Drop**
+
+- Photos
+- Sport / fitness tracking
+- Heart rate
+- Navigator
+- All remaining Tools (beyond day counters)
+- All JSON-based data stores (migrate everything to PostgreSQL)
+
+Apply encryption to all user-created content where it makes sense and is feasible; use your judgment on what qualifies.
+
+---
+
+**Before You Write Any Code**
+
+Do not assume anything. If you have any questions about the rewrite, ask all of them now — before executing. Present your full question list and the current feature inventory, wait for my confirmation, and then implement everything in one go.
