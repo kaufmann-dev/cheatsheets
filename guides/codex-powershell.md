@@ -1,21 +1,30 @@
-# Codex PowerShell Execution Policy Setup
+# Codex PowerShell & Git Setup
 
-Follow these steps to configure your execution policy for Codex in both PowerShell versions.
+## 1. PowerShell (64-bit)
 
-## 1. Configure Standard PowerShell (64-bit)
-* Open your Windows Start Menu.
-* Type `PowerShell`.
-* Right-click **Windows PowerShell** and select **Run as Administrator**.
-* Paste the following command and press Enter:
-  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine`
-* Type `Y` and press Enter to confirm the change.
+1. Search **PowerShell** in the Start Menu, right-click it, and select **Run as Administrator**.
+2. Run:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+   ```
+3. Press `Y` to confirm.
 
-## 2. Configure PowerShell x86 (32-bit)
-* Open your Windows Start Menu again.
-* Type `PowerShell x86`.
-* Right-click **Windows PowerShell (x86)** and select **Run as Administrator**.
-* Paste the same command and press Enter:
-  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine`
-* Type `Y` and press Enter to confirm.
+## 2. PowerShell x86 (32-bit)
 
-Your execution policies are now set up for Codex.
+1. Search **PowerShell x86** in the Start Menu, right-click it, and select **Run as Administrator**.
+2. Run the same command:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+   ```
+3. Press `Y` to confirm.
+
+## 3. Git Safe Directory
+
+Open any terminal and run:
+```bash
+git config --global --add safe.directory *
+```
+
+---
+
+Done. Codex can now run PowerShell scripts and Git commands without errors.
