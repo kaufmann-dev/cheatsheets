@@ -27,4 +27,21 @@ git config --global --add safe.directory *
 
 ---
 
-Done. Codex can now run PowerShell scripts and Git commands without errors.
+## 4. pnpm on PATH
+
+Open a normal PowerShell terminal where pnpm already works and run:
+```powershell
+$pnpmDir = Split-Path (Get-Command pnpm).Source; $userPath = [Environment]::GetEnvironmentVariable("Path", "User"); if (($userPath -split ';') -notcontains $pnpmDir) { [Environment]::SetEnvironmentVariable("Path", "$userPath;$pnpmDir", "User") }
+```
+
+Then fully restart Codex.
+
+After restarting, Codex should be able to run:
+
+```powershell
+pnpm --version
+```
+
+without escalation.
+
+Done. Codex can now run PowerShell scripts, Git commands, and pnpm commands without PATH errors.
