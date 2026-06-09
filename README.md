@@ -11,3 +11,4 @@ The repository is organized into the following main directories:
 *   **`guides/`**: Contains step-by-step tutorials, walkthroughs, and broader instructional documents.
 *   **`prompts/`**: A collection of AI prompts, templates, and contextual instructions for interacting with LLMs.
 *   **`snippets/`**: Reusable code snippets, configuration blocks, and small functional examples.
+*   **`stacks/`**: A collection of carefully crafted technology stacks to use as the base for new projects.
