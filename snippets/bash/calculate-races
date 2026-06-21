@@ -1,0 +1,373 @@
+#!/usr/bin/env bash
+# Stockrank Tournament Calculator: calculate single-stage tournament
+# parameters using universe size (N), accuracy level, model, and number of
+# scoring LLMs.
+#
+# Requires: bash 4+, awk.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Colors and output helpers
+# ---------------------------------------------------------------------------
+
+if [[ -t 1 ]]; then
+    RED='\033[0;31m'
+    YEL='\033[1;33m'
+    GRN='\033[0;32m'
+    CYN='\033[0;36m'
+    RST='\033[0m'
+else
+    RED=''
+    YEL=''
+    GRN=''
+    CYN=''
+    RST=''
+fi
+
+info() { printf "%b[info]%b  %s\n" "$CYN" "$RST" "$*"; }
+warn() { printf "%b[warn]%b  %s\n" "$YEL" "$RST" "$*"; }
+bad()  { printf "%b[!]%b     %s\n" "$RED" "$RST" "$*"; }
+ok()   { printf "%b[ok]%b    %s\n" "$GRN" "$RST" "$*"; }
+
+# ---------------------------------------------------------------------------
+# Preflight check
+# ---------------------------------------------------------------------------
+
+preflight() {
+    if (( BASH_VERSINFO[0] < 4 )); then
+        bad "Bash 4+ is required. Current version: ${BASH_VERSION}"
+        exit 1
+    fi
+
+    require_cmd awk
+}
+
+require_cmd() {
+    command -v "$1" >/dev/null 2>&1 || {
+        bad "Missing required command: $1"
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Calculations Engine
+# ---------------------------------------------------------------------------
+
+calculate_tournament() {
+    local n="$1"           # Total stocks
+    local accuracy="$2"    # low, medium, high
+    local model="$3"       # model preset
+    local model_count="${4:-1}" # number of scoring LLMs
+
+    # Standardize accuracy string
+    accuracy="${accuracy,,}"
+    model="$(normalize_model_choice "$model" "$accuracy")"
+
+    if [[ "$accuracy" != "low" && "$accuracy" != "medium" && "$accuracy" != "high" ]]; then
+        bad "Invalid accuracy level: $accuracy. Must be 'low', 'medium', or 'high'."
+        exit 1
+    fi
+
+    if [[ ! "$n" =~ ^[1-9][0-9]*$ ]]; then
+        bad "Universe size must be a positive integer."
+        exit 1
+    fi
+
+    if [[ ! "$model_count" =~ ^[1-9][0-9]*$ ]]; then
+        bad "Scoring model count must be a positive integer."
+        exit 1
+    fi
+
+    printf '\n'
+    info "Calculations for single-stage tournament of $n stocks | Accuracy: ${accuracy^^} | Model: $(model_display_name "$model") | Scoring models: $model_count"
+    printf '\n'
+
+    # Math calculations via awk
+    awk -v N="$n" -v ACC="$accuracy" -v MODEL="$model" -v MODEL_COUNT="$model_count" -v CYN="$CYN" -v GRN="$GRN" -v RST="$RST" '
+        BEGIN {
+            ln_N = log(N)
+
+            # --- PARAMETER MAPPING ---
+            # k is FIXED per accuracy level (LLM cognitive constant).
+            # d is DYNAMIC for low/medium (graph connectivity scaling)
+            #   and FIXED for high (variance reduction target).
+            if (ACC == "low") {
+                K = 6  # Maximizes token efficiency
+
+                # d = max(3, ceil(0.6 * ln(N)))  — race appearances per stock
+                d_multiplier = 0.6
+                d_min = 3
+                d_fixed = 0
+                desc = "Fast, broad sorting with minimal token cost."
+            } else if (ACC == "medium") {
+                K = 5  # Optimal balance of cost and cognitive focus
+
+                # d = max(6, ceil(1.0 * ln(N)))  — race appearances per stock
+                d_multiplier = 1.0
+                d_min = 6
+                d_fixed = 0
+                desc = "Balanced precision and cost for regular portfolios."
+            } else {
+                K = 4  # Highest cognitive accuracy
+
+                # d = 15 FIXED — variance reduction target, independent of N
+                d_multiplier = 0
+                d_min = 15
+                d_fixed = 1
+                desc = "Ultra-high precision, low standard error ranking."
+            }
+
+            # --- MODEL MAPPING ---
+            # Reasoning tokens are estimates; providers bill them as output tokens.
+            if (MODEL == "gpt55-high") {
+                input_rate = 5.00
+                output_rate = 30.00
+                input_rate_label = "$5.00"
+                output_rate_label = "$30.00"
+                model_name = "GPT-5.5 (high reasoning)"
+                model_id = "gpt-5.5"
+                reasoning_effort = "high"
+                reasoning_tokens_per_stock = 250
+            } else if (MODEL == "gpt55-low") {
+                input_rate = 5.00
+                output_rate = 30.00
+                input_rate_label = "$5.00"
+                output_rate_label = "$30.00"
+                model_name = "GPT-5.5 (low reasoning)"
+                model_id = "gpt-5.5"
+                reasoning_effort = "low"
+                reasoning_tokens_per_stock = 75
+            } else if (MODEL == "deepseek-v4-pro-max") {
+                input_rate = 0.435
+                output_rate = 0.87
+                input_rate_label = "$0.435"
+                output_rate_label = "$0.87"
+                model_name = "DeepSeek V4 Pro (max reasoning)"
+                model_id = "deepseek-v4-pro"
+                reasoning_effort = "max"
+                reasoning_tokens_per_stock = 350
+            } else if (MODEL == "deepseek-v4-flash-max") {
+                input_rate = 0.14
+                output_rate = 0.28
+                input_rate_label = "$0.14"
+                output_rate_label = "$0.28"
+                model_name = "DeepSeek V4 Flash (max reasoning)"
+                model_id = "deepseek-v4-flash"
+                reasoning_effort = "max"
+                reasoning_tokens_per_stock = 350
+            } else {
+                printf "Invalid model preset: %s\n", MODEL > "/dev/stderr"
+                exit 1
+            }
+
+            # --- CALCULATE d ---
+            if (d_fixed) {
+                d_rec = d_min
+                d_source = "fixed (variance target)"
+            } else {
+                scaled_d = d_multiplier * ln_N
+                d_rec = int(scaled_d)
+                if (d_rec < scaled_d) {
+                    d_rec += 1
+                }
+                if (d_rec < d_min) {
+                    d_rec = d_min
+                }
+                d_source = sprintf("dynamic (%.2f * ln(%d) = %.2f)", d_multiplier, N, scaled_d)
+            }
+
+            # Absolute minimum race appearances per stock to connect the graph.
+            d_min_connect = ln_N / (K - 1)
+
+            # Races per scoring model = ceil((N * d) / k)
+            races_per_model = int((N * d_rec) / K)
+            if (races_per_model * K < N * d_rec) {
+                races_per_model += 1
+            }
+            total_scoring_calls = races_per_model * MODEL_COUNT
+
+            # --- ESTIMATED TOKEN COSTS ---
+            input_tokens_per_stock = 1000
+            visible_output_tokens_per_stock = 35
+            # Reasoning tokens are not visible, but are billed as output tokens.
+            race_overhead_tokens = 300
+            input_tokens_per_race = race_overhead_tokens + (K * input_tokens_per_stock)
+            visible_output_tokens_per_race = K * visible_output_tokens_per_stock
+            reasoning_tokens_per_race = K * reasoning_tokens_per_stock
+            output_tokens_per_race = visible_output_tokens_per_race + reasoning_tokens_per_race
+            total_input_tokens = total_scoring_calls * input_tokens_per_race
+            total_visible_output_tokens = total_scoring_calls * visible_output_tokens_per_race
+            total_reasoning_tokens = total_scoring_calls * reasoning_tokens_per_race
+            total_output_tokens = total_scoring_calls * output_tokens_per_race
+            total_cost = ((total_input_tokens / 1000000) * input_rate) + ((total_output_tokens / 1000000) * output_rate)
+
+            # --- PRINT OUTPUT ---
+            printf "%s[SINGLE-STAGE PROFILE]%s\n", CYN, RST
+            printf "  %s\n\n", desc
+
+            printf "%s[Tournament Mechanics]%s\n", GRN, RST
+            printf "  %-39s : %.2f\n", "Natural log ln(N)", ln_N
+            printf "  %-39s : %.2f %s\n", "Minimum race appearances per stock", d_min_connect, "(under this the math breaks)"
+            printf "  %-39s : %d %s\n", "Group size (k)", K, "(fixed per accuracy level)"
+            printf "  %-39s : %d %s\n", "Race appearances per stock (d)", d_rec, "(" d_source ")"
+            printf "  %-39s : %d races\n", "Races per scoring model", races_per_model
+            printf "  %-39s : %d models\n", "Scoring models", MODEL_COUNT
+            printf "  %-39s : %d calls\n\n", "Total scoring calls", total_scoring_calls
+
+            printf "%s[Infrastructure & Token Costs]%s\n", GRN, RST
+            printf "  %-39s : %s\n", "Target model class", model_name
+            printf "  %-39s : %s\n", "API model id", model_id
+            printf "  %-39s : %s\n", "Reasoning effort", reasoning_effort
+            printf "  %-39s : %s / %s\n", "Input/output rate per 1M tokens", input_rate_label, output_rate_label
+            printf "  %-39s : %d input, %d visible output, %d reasoning\n", "Estimated tokens per race", input_tokens_per_race, visible_output_tokens_per_race, reasoning_tokens_per_race
+            printf "  %-39s : %d input, %d output\n", "Total estimated tokens", total_input_tokens, total_output_tokens
+            printf "  %-39s : %d visible output, %d reasoning\n", "Output token split", total_visible_output_tokens, total_reasoning_tokens
+            printf "  %-39s : $%.2f\n", "Total estimated API bill", total_cost
+        }
+    '
+}
+
+default_model_for_accuracy() {
+    case "${1,,}" in
+        low) printf '%s\n' "deepseek-v4-flash-max" ;;
+        medium) printf '%s\n' "gpt55-low" ;;
+        high) printf '%s\n' "gpt55-high" ;;
+        *) printf '%s\n' "gpt55-low" ;;
+    esac
+}
+
+model_display_name() {
+    case "$1" in
+        gpt55-high) printf '%s\n' "GPT-5.5 (high reasoning)" ;;
+        gpt55-low) printf '%s\n' "GPT-5.5 (low reasoning)" ;;
+        deepseek-v4-pro-max) printf '%s\n' "DeepSeek V4 Pro (max reasoning)" ;;
+        deepseek-v4-flash-max) printf '%s\n' "DeepSeek V4 Flash (max reasoning)" ;;
+        *) printf '%s\n' "$1" ;;
+    esac
+}
+
+normalize_model_choice() {
+    local choice="${1:-}"
+    local accuracy="${2:-medium}"
+
+    if [[ -z "$choice" ]]; then
+        default_model_for_accuracy "$accuracy"
+        return
+    fi
+
+    choice="${choice,,}"
+    choice="${choice//(/}"
+    choice="${choice//)/}"
+    choice="${choice//./}"
+    choice="${choice//_/-}"
+    choice="${choice// /-}"
+    while [[ "$choice" == *--* ]]; do
+        choice="${choice//--/-}"
+    done
+
+    case "$choice" in
+        1|gpt55-high|gpt-55-high|gpt55high|gpt-55-high-reasoning|gpt55-high-reasoning)
+            printf '%s\n' "gpt55-high"
+            ;;
+        2|gpt55-low|gpt-55-low|gpt55low|gpt-55-low-reasoning|gpt55-low-reasoning)
+            printf '%s\n' "gpt55-low"
+            ;;
+        3|deepseek-v4-pro-max|deepseek-v4-pro|deepseek-pro-max|deepseek-pro|pro)
+            printf '%s\n' "deepseek-v4-pro-max"
+            ;;
+        4|deepseek-v4-flash-max|deepseek-v4-flash|deepseek-flash-max|deepseek-flash|flash)
+            printf '%s\n' "deepseek-v4-flash-max"
+            ;;
+        *)
+            printf "%b[!]%b     Invalid model: %s. Choose 1-4, gpt55-high, gpt55-low, deepseek-v4-pro-max, or deepseek-v4-flash-max.\n" "$RED" "$RST" "$1" >&2
+            exit 1
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# Command-line interface and Usage
+# ---------------------------------------------------------------------------
+
+usage() {
+    cat <<'USAGE'
+Usage:
+  calculate-races                     # Interactive prompts
+  calculate-races [STOCKS] [ACC] [MODEL] [SCORING_MODELS]
+
+Arguments:
+  STOCKS   Total size of your equity universe (e.g. 500, 600, 1000)
+  ACC      Desired accuracy level: 'low', 'medium', or 'high'
+  MODEL    Optional model preset:
+             1 or gpt55-high
+             2 or gpt55-low
+             3 or deepseek-v4-pro-max
+             4 or deepseek-v4-flash-max
+  SCORING_MODELS
+           Optional positive integer count of scoring LLMs. This multiplies
+           scoring calls and estimated token cost. Default: 1
+USAGE
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+main() {
+    preflight
+
+    if [[ $# -gt 0 ]]; then
+        if [[ $# -gt 4 ]]; then
+            bad "Unexpected extra arguments."
+            usage
+            exit 1
+        fi
+
+        case "$1" in
+            -h|--help|help)
+                usage
+                exit 0
+                ;;
+        esac
+
+        local stocks="$1"
+        local accuracy="${2:-medium}"
+        local model="${3:-}"
+        local model_count="${4:-1}"
+
+        calculate_tournament "$stocks" "$accuracy" "$model" "$model_count"
+        exit 0
+    fi
+
+    # Interactive Prompt Mode
+    info "Stockrank Tournament Math Calculator"
+    printf "%bEnter size of stock universe (N) [500]:%b " "$CYN" "$RST"
+    local input_n
+    read -r input_n
+    input_n="${input_n:-500}"
+
+    printf "%bSelect desired accuracy (low, medium, high) [medium]:%b " "$CYN" "$RST"
+    local input_acc
+    read -r input_acc
+    input_acc="${input_acc:-medium}"
+
+    printf "%bSelect model:%b\n" "$CYN" "$RST"
+    printf "  1) GPT-5.5 (high reasoning)\n"
+    printf "  2) GPT-5.5 (low reasoning)\n"
+    printf "  3) DeepSeek V4 Pro (max reasoning)\n"
+    printf "  4) DeepSeek V4 Flash (max reasoning)\n"
+    printf "%bModel [$(default_model_for_accuracy "$input_acc")]:%b " "$CYN" "$RST"
+    local input_model
+    read -r input_model
+    input_model="${input_model:-$(default_model_for_accuracy "$input_acc")}"
+
+    printf "%bNumber of scoring LLMs [1]:%b " "$CYN" "$RST"
+    local input_model_count
+    read -r input_model_count
+    input_model_count="${input_model_count:-1}"
+
+    calculate_tournament "$input_n" "$input_acc" "$input_model" "$input_model_count"
+}
+
+main "$@"
