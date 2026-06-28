@@ -16,6 +16,14 @@ python restrict.py -a -s 4 input.mp4
 ```
 *Warning: Video bitrate uses the entire size limit budget. If the input file has audio, the resulting file will exceed the target limit!*
 
+#### SiriKali lockbox CLI wrapper
+```bash
+lockbox config
+lockbox mount
+lockbox unmount
+```
+*Configures, mounts, and unmounts one SiriKali encrypted folder from the terminal without opening the GUI.*
+
 #### Hexagonal Object Positioning Calculator
 ```bash
 python hexagonal-position-calculator.py
