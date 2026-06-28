@@ -186,6 +186,7 @@ encode_attempt() {
         -vf "$filter" \
         -c:v libx264 -preset medium -b:v "${video_k}k" \
         -pix_fmt yuv420p \
+        -movflags +faststart \
         -pass 2 -passlogfile "$passlog" \
         "$attempt_file"
 }
