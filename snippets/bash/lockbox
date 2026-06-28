@@ -96,8 +96,13 @@ configure() {
   fi
 
   local new_volume_dir new_mount_dir
-  new_volume_dir=$(prompt_path "Encrypted volume path" "$volume_dir")
-  new_mount_dir=$(prompt_path "Mount point path" "$mount_dir")
+  printf 'Configure the two folders SiriKali needs:\n' >&2
+  printf '  1. Encrypted data folder: where the locked/encrypted files are stored.\n' >&2
+  printf '  2. Unlocked folder: where your normal files appear after mounting.\n' >&2
+  printf '\n' >&2
+
+  new_volume_dir=$(prompt_path "Encrypted data folder (locked files)" "$volume_dir")
+  new_mount_dir=$(prompt_path "Unlocked folder (where files appear)" "$mount_dir")
 
   [[ -d $new_volume_dir ]] || die "encrypted volume path is not a directory: $new_volume_dir"
   mkdir -p "$new_mount_dir"
