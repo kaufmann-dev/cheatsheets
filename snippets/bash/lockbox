@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+program_name=${0##*/}
+config_dir=${XDG_CONFIG_HOME:-"$HOME/.config"}/lockbox
+config_file=$config_dir/config
+
+usage() {
+  printf 'Usage: %s {config|mount|unmount}\n' "$program_name" >&2
+}
+
+die() {
+  printf '%s: %s\n' "$program_name" "$*" >&2
+  exit 1
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
+}
+
+expand_path() {
+  case ${1-} in
+    "~") printf '%s\n' "$HOME" ;;
+    "~/"*) printf '%s/%s\n' "$HOME" "${1#~/}" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+read_config() {
+  volume_dir=
+  mount_dir=
+
+  [[ -f $config_file ]] || die "config not found; run '$program_name config' first"
+
+  local line key value
+  while IFS= read -r line || [[ -n $line ]]; do
+    [[ -z $line || ${line:0:1} == "#" ]] && continue
+
+    key=${line%%=*}
+    value=${line#*=}
+
+    case $key in
+      volume_dir) volume_dir=$value ;;
+      mount_dir) mount_dir=$value ;;
+    esac
+  done <"$config_file"
+
+  [[ -n $volume_dir ]] || die "config is missing volume_dir"
+  [[ -n $mount_dir ]] || die "config is missing mount_dir"
+}
+
+prompt_path() {
+  local label=$1
+  local current=${2-}
+  local value
+
+  if [[ -n $current ]]; then
+    printf '%s [%s]: ' "$label" "$current" >&2
+  else
+    printf '%s: ' "$label" >&2
+  fi
+
+  IFS= read -r value
+  if [[ -z $value && -n $current ]]; then
+    value=$current
+  fi
+
+  [[ -n $value ]] || die "$label is required"
+  expand_path "$value"
+}
+
+write_config() {
+  local new_volume_dir=$1
+  local new_mount_dir=$2
+  local temp_file
+
+  mkdir -p "$config_dir"
+  temp_file=$(mktemp "$config_dir/config.XXXXXX")
+  chmod 600 "$temp_file"
+
+  {
+    printf 'volume_dir=%s\n' "$new_volume_dir"
+    printf 'mount_dir=%s\n' "$new_mount_dir"
+  } >"$temp_file"
+
+  mv "$temp_file" "$config_file"
+  chmod 600 "$config_file"
+}
+
+configure() {
+  if [[ -f $config_file ]]; then
+    read_config
+  else
+    volume_dir=
+    mount_dir=
+  fi
+
+  local new_volume_dir new_mount_dir
+  new_volume_dir=$(prompt_path "Encrypted volume path" "$volume_dir")
+  new_mount_dir=$(prompt_path "Mount point path" "$mount_dir")
+
+  [[ -d $new_volume_dir ]] || die "encrypted volume path is not a directory: $new_volume_dir"
+  mkdir -p "$new_mount_dir"
+  [[ -d $new_mount_dir ]] || die "mount point path is not a directory: $new_mount_dir"
+
+  write_config "$new_volume_dir" "$new_mount_dir"
+  printf 'Configured %s\n' "$config_file"
+}
+
+mount_volume() {
+  require_command sirikali
+  require_command mountpoint
+  read_config
+
+  [[ -d $volume_dir ]] || die "encrypted volume path is not a directory: $volume_dir"
+  mkdir -p "$mount_dir"
+
+  if mountpoint -q "$mount_dir"; then
+    printf 'Already mounted: %s\n' "$mount_dir"
+    return 0
+  fi
+
+  local password
+  printf 'Password: ' >&2
+  IFS= read -r -s password
+  printf '\n' >&2
+
+  printf '%s\n' "$password" | sirikali -e -b stdin -d "$volume_dir" -z "$mount_dir" -k rw
+  unset password
+}
+
+unmount_volume() {
+  require_command sirikali
+  require_command mountpoint
+  read_config
+
+  if ! mountpoint -q "$mount_dir"; then
+    printf 'Not mounted: %s\n' "$mount_dir"
+    return 0
+  fi
+
+  sirikali -u "$mount_dir"
+}
+
+case ${1-} in
+  config)
+    [[ $# -eq 1 ]] || {
+      usage
+      exit 2
+    }
+    configure
+    ;;
+  mount)
+    [[ $# -eq 1 ]] || {
+      usage
+      exit 2
+    }
+    mount_volume
+    ;;
+  unmount)
+    [[ $# -eq 1 ]] || {
+      usage
+      exit 2
+    }
+    unmount_volume
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac
