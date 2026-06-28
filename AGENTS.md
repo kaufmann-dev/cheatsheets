@@ -10,14 +10,14 @@ Static personal knowledge base. No build system, no package manager, no tests, n
 - `designs/` — design system specs with YAML frontmatter token definitions
 - `guides/` — step-by-step guides
 - `prompts/` — copy-paste AI prompt templates
-- `snippets/` — standalone scripts (Python, Bash, JS)
+- `utilities/` — standalone helper scripts and browser utilities (Python, Bash, JS)
 
 ## What to know
 
 - There is no `package.json`, `Makefile`, or any build toolchain. Don't look for one.
 - There is no test runner, linter, or formatter. No verification commands to run.
 - No CI/CD. No git hooks (only `.sample` hooks present).
-- The standalone scripts in `snippets/` have no dependency management — each documents its own external requirements (e.g., `ffmpeg`, `jQuery`).
+- The standalone scripts in `utilities/` have no dependency management — each documents its own external requirements (e.g., `ffmpeg`).
 
 ## Prompt Structure
 

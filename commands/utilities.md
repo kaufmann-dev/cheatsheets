@@ -30,11 +30,11 @@ python hexagonal-position-calculator.py
 ```
 *Calculates exact transformation coordinates (x, z) for 6 objects positioned around a central hexagon, given the hexagon's width and additional spacing distance.*
 
-#### JavaScript & jQuery Utilities (`utils.js`)
+#### JavaScript Utilities (`utils.js`)
 ```javascript
-randomIntFromInterval(min, max); // Generate random integer between min and max
-jQuery.fn.hasScrollBar();        // Check if an element has a vertical scrollbar
-jQuery.fn.clickToggle(fn1, fn2); // Toggle between two click handler functions
-jQuery.fn.search(selector);      // Filter elements by matching text content
+randomIntFromInterval(min, max);             // Generate random integer between min and max
+hasScrollbar(element);                       // Check if an element has a vertical scrollbar
+clickToggle(element, fn1, fn2);              // Toggle between two click handler functions
+filterByText(input, document.querySelectorAll(".item")); // Filter elements by matching text
 ```
-*A collection of helper functions for standard JS and jQuery UI interactions.*
+*A collection of dependency-free helper functions for standard JavaScript UI interactions.*
