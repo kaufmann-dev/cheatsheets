@@ -22,7 +22,7 @@ lockbox config
 lockbox mount
 lockbox unmount
 ```
-*Configures, mounts, and unmounts one SiriKali encrypted folder from the terminal without opening the GUI.*
+*Configures, mounts, opens, and unmounts one SiriKali encrypted folder from the terminal without opening the GUI.*
 
 #### Hexagonal Object Positioning Calculator
 ```bash
