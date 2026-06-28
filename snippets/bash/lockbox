@@ -176,7 +176,15 @@ unmount_volume() {
     return 0
   fi
 
-  sirikali -u "$mount_dir"
+  if ! sirikali -u -d "$mount_dir"; then
+    die "unmount failed: $mount_dir"
+  fi
+
+  if mountpoint -q "$mount_dir"; then
+    die "unmount command finished but mount point is still mounted: $mount_dir"
+  fi
+
+  printf 'Unmounted: %s\n' "$mount_dir"
 }
 
 case ${1-} in
