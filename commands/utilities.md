@@ -1,20 +1,20 @@
-#### Resize video to specific size (Includes Audio)
+#### Encode MP4 to a maximum size
 ```bash
-./size-limit-encoder.sh input.mp4 4
+video-size input.mp4 4
 ```
-*Calculates video bitrate by subtracting audio bitrate, keeping the final file accurately under the size limit even with audio.*
+*Automatically chooses bitrate, resolution, frame rate, and audio quality, then only saves an output that fits at or below the requested MB size.*
+
+#### Encode MP4 to a maximum size without audio
+```bash
+video-size input.mp4 4 --video-only
+```
+*Drops audio and uses the full size budget for video.*
 
 #### Resize video to specific size .webm (Advanced, Includes Audio)
 ```bash
 python restrict.py -a -s 4 input.mp4
 ```
 *Feature-rich python script that handles complex encoding (auto downscaling, subtitles, etc.) with precise size limits.*
-
-#### Resize video to specific size (Video-only budget)
-```bash
-./resize.sh input_video.mp4 <target_size_in_MB>
-```
-*Warning: Video bitrate uses the entire size limit budget. If the input file has audio, the resulting file will exceed the target limit!*
 
 #### SiriKali lockbox CLI wrapper
 ```bash
