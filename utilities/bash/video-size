@@ -1,0 +1,402 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage:
+  video-size INPUT TARGET_MB
+  video-size INPUT TARGET_MB -o OUTPUT
+  video-size INPUT TARGET_MB --video-only
+
+Encode an MP4 that fits at or below TARGET_MB.
+
+The script automatically chooses video bitrate, resolution, frame rate, and
+audio quality. It only saves a final output after verifying the byte size.
+
+Options:
+  -o, --output FILE   Write to FILE instead of INPUT-TARGET_MB.mp4
+  --video-only        Drop audio and use the full size budget for video
+  -h, --help          Show this help
+EOF
+}
+
+die() {
+    printf 'video-size: %s\n' "$*" >&2
+    exit 1
+}
+
+need_command() {
+    command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+}
+
+need_encoder() {
+    ffmpeg -v quiet -hide_banner -encoders |
+        awk -v encoder="$1" '$2 == encoder { found = 1 } END { exit !found }' ||
+        die "ffmpeg is missing required encoder: $1"
+}
+
+positive_number() {
+    awk -v value="$1" '
+        BEGIN {
+            valid = value ~ /^([0-9]+([.][0-9]*)?|[.][0-9]+)$/
+            exit !(valid && value + 0 > 0)
+        }'
+}
+
+integer_bytes() {
+    awk -v mb="$1" 'BEGIN { printf "%.0f", mb * 1024 * 1024 }'
+}
+
+filesize() {
+    if stat -c '%s' "$1" >/dev/null 2>&1; then
+        stat -c '%s' "$1"
+    else
+        stat -f '%z' "$1"
+    fi
+}
+
+probe() {
+    ffprobe -v error "$@"
+}
+
+choose_audio_bitrate() {
+    local total_k="$1"
+
+    if (( total_k < 120 )); then
+        die "target is too small for a useful audio + video encode"
+    elif (( total_k < 180 )); then
+        printf '24'
+    elif (( total_k < 280 )); then
+        printf '32'
+    elif (( total_k < 450 )); then
+        printf '48'
+    elif (( total_k < 800 )); then
+        printf '64'
+    elif (( total_k < 1400 )); then
+        printf '96'
+    else
+        printf '128'
+    fi
+}
+
+choose_geometry() {
+    local video_k="$1"
+    local min_bpp="$2"
+
+    awk \
+        -v source_w="$source_width" \
+        -v source_h="$source_height" \
+        -v source_fps="$source_fps" \
+        -v video_k="$video_k" \
+        -v min_bpp="$min_bpp" '
+        function even(value) {
+            value = int(value)
+            if (value % 2) value--
+            if (value < 2) value = 2
+            return value
+        }
+        function add_height(value) {
+            value = even(value)
+            if (value <= source_h && value >= 144 && !seen_h[value]) {
+                heights[++height_count] = value
+                seen_h[value] = 1
+            }
+        }
+        function add_fps(value) {
+            value += 0
+            key = sprintf("%.3f", value)
+            if (value <= source_fps + 0.01 && value >= 1 && !seen_f[key]) {
+                rates[++rate_count] = value
+                seen_f[key] = 1
+            }
+        }
+        BEGIN {
+            add_height(source_h)
+            split("2160 1440 1080 900 720 540 480 360 300 240 180 144", standard_heights)
+            for (i in standard_heights) add_height(standard_heights[i])
+
+            add_fps(source_fps)
+            split("60 50 48 30 25 24 20 15 12 10", standard_rates)
+            for (i in standard_rates) add_fps(standard_rates[i])
+
+            best_pixels = 0
+            fallback_pixels = 0
+            fallback_h = source_h
+            fallback_fps = source_fps
+
+            for (h_i = 1; h_i <= height_count; h_i++) {
+                h = heights[h_i]
+                w = even(h * source_w / source_h)
+
+                for (f_i = 1; f_i <= rate_count; f_i++) {
+                    fps = rates[f_i]
+                    pixels = w * h * fps
+                    bpp = video_k * 1000 / pixels
+
+                    if (bpp >= min_bpp && pixels > best_pixels) {
+                        best_pixels = pixels
+                        best_h = h
+                        best_fps = fps
+                    }
+
+                    if (!fallback_pixels || pixels < fallback_pixels) {
+                        fallback_pixels = pixels
+                        fallback_h = h
+                        fallback_fps = fps
+                    }
+                }
+            }
+
+            if (best_pixels) {
+                printf "%d %.3f\n", best_h, best_fps
+            } else {
+                printf "%d %.3f\n", fallback_h, fallback_fps
+            }
+        }'
+}
+
+encode_attempt() {
+    local video_k="$1"
+    local out_height="$2"
+    local out_fps="$3"
+    local filter="scale=-2:${out_height}:flags=lanczos,fps=${out_fps}"
+    local audio_args=()
+
+    if (( use_audio )); then
+        audio_args=(-map 0:a:0 -c:a aac -b:a "${audio_k}k")
+        if (( audio_mono )); then
+            audio_args+=(-ac 1)
+        fi
+    else
+        audio_args=(-an)
+    fi
+
+    rm -f "$attempt_file" "${passlog}"-0.log "${passlog}"-0.log.mbtree
+
+    ffmpeg -y -v error -i "$input" \
+        -map 0:v:0 \
+        -vf "$filter" \
+        -c:v libx264 -preset medium -b:v "${video_k}k" \
+        -pix_fmt yuv420p \
+        -pass 1 -passlogfile "$passlog" \
+        -an -f mp4 /dev/null
+
+    ffmpeg -y -v error -i "$input" \
+        -map 0:v:0 "${audio_args[@]}" \
+        -vf "$filter" \
+        -c:v libx264 -preset medium -b:v "${video_k}k" \
+        -pix_fmt yuv420p \
+        -pass 2 -passlogfile "$passlog" \
+        "$attempt_file"
+}
+
+input=''
+target_mb=''
+output=''
+video_only=0
+
+while (($#)); do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -o|--output)
+            shift
+            [[ $# -gt 0 ]] || die "--output requires a file"
+            output="$1"
+            ;;
+        --video-only)
+            video_only=1
+            ;;
+        -*)
+            die "unknown option: $1"
+            ;;
+        *)
+            if [[ -z "$input" ]]; then
+                input="$1"
+            elif [[ -z "$target_mb" ]]; then
+                target_mb="$1"
+            else
+                die "unexpected argument: $1"
+            fi
+            ;;
+    esac
+    shift
+done
+
+[[ -n "$input" ]] || die "missing input file"
+[[ -n "$target_mb" ]] || die "missing target size in MB"
+[[ -f "$input" ]] || die "input is not a regular file: $input"
+positive_number "$target_mb" || die "target size must be a positive number"
+
+need_command ffmpeg
+need_command ffprobe
+need_command awk
+need_encoder libx264
+
+target_bytes="$(integer_bytes "$target_mb")"
+[[ "$target_bytes" =~ ^[0-9]+$ ]] || die "could not parse target size"
+(( target_bytes > 0 )) || die "target size must be greater than zero"
+
+if [[ -z "$output" ]]; then
+    output="${input%.*}-${target_mb}MB.mp4"
+fi
+if [[ -e "$output" && "$input" -ef "$output" ]]; then
+    die "output path must not be the input file"
+fi
+
+duration="$(
+    probe -show_entries format=duration \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input"
+)"
+positive_number "$duration" || die "could not read a positive input duration"
+
+source_width="$(
+    probe -select_streams v:0 -show_entries stream=width \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input"
+)"
+source_height="$(
+    probe -select_streams v:0 -show_entries stream=height \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input"
+)"
+source_rate="$(
+    probe -select_streams v:0 -show_entries stream=avg_frame_rate \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input"
+)"
+
+[[ "$source_width" =~ ^[0-9]+$ && "$source_height" =~ ^[0-9]+$ ]] ||
+    die "could not read input video dimensions"
+
+source_fps="$(
+    awk -v rate="$source_rate" '
+        BEGIN {
+            split(rate, parts, "/")
+            if (parts[2] && parts[2] != 0) fps = parts[1] / parts[2]
+            else fps = rate + 0
+            if (fps <= 0) fps = 30
+            printf "%.3f", fps
+        }'
+)"
+
+audio_stream="$(
+    probe -select_streams a:0 -show_entries stream=index \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input" | sed -n '1p'
+)"
+
+use_audio=0
+audio_k=0
+audio_mono=0
+audio_label='none'
+
+budget_bytes="$(
+    awk -v bytes="$target_bytes" 'BEGIN { printf "%d", bytes * 0.975 }'
+)"
+total_k="$(
+    awk -v bytes="$budget_bytes" -v dur="$duration" \
+        'BEGIN { printf "%d", bytes * 8 / dur / 1000 }'
+)"
+
+if [[ -n "$audio_stream" && "$video_only" -eq 0 ]]; then
+    use_audio=1
+    audio_channels="$(
+        probe -select_streams a:0 -show_entries stream=channels \
+            -of default=noprint_wrappers=1:nokey=1 \
+            "$input" | sed -n '1p'
+    )"
+    [[ "$audio_channels" =~ ^[0-9]+$ ]] || audio_channels=2
+
+    audio_k="$(choose_audio_bitrate "$total_k")"
+    need_encoder aac
+    if (( audio_k <= 48 || audio_channels == 1 )); then
+        audio_mono=1
+        audio_label="${audio_k}k mono"
+    else
+        audio_label="${audio_k}k"
+    fi
+fi
+
+min_video_k=70
+video_k=$(( total_k - audio_k ))
+(( video_k >= min_video_k )) ||
+    die "target is too small after reserving audio budget"
+
+workdir="$(mktemp -d "${TMPDIR:-/tmp}/video-size.XXXXXX")"
+attempt_file="$workdir/attempt.mp4"
+best_file="$workdir/best.mp4"
+passlog="$workdir/pass"
+
+cleanup() {
+    rm -rf "$workdir"
+}
+trap cleanup EXIT
+
+printf 'Input: %s\n' "$input"
+printf 'Target: %s MB (%s bytes)\n' "$target_mb" "$target_bytes"
+printf 'Audio: %s\n' "$audio_label"
+
+best_size=0
+attempts=7
+bpp_floor='0.060'
+
+for ((attempt = 1; attempt <= attempts; attempt++)); do
+    read -r out_height out_fps < <(choose_geometry "$video_k" "$bpp_floor")
+
+    printf 'Attempt %d/%d: video %sk, height %s, fps %s\n' \
+        "$attempt" "$attempts" "$video_k" "$out_height" "$out_fps"
+
+    encode_attempt "$video_k" "$out_height" "$out_fps"
+    current_size="$(filesize "$attempt_file")"
+    printf '  size: %s bytes\n' "$current_size"
+
+    if (( current_size <= target_bytes )); then
+        if (( best_size == 0 || current_size > best_size )); then
+            cp "$attempt_file" "$best_file"
+            best_size="$current_size"
+        fi
+
+        close_enough="$(awk -v size="$current_size" -v target="$target_bytes" \
+            'BEGIN { exit !(size >= target * 0.985) }' && printf yes || printf no)"
+        if [[ "$close_enough" == yes ]]; then
+            break
+        fi
+
+        next_video_k="$(
+            awk -v bitrate="$video_k" -v target="$target_bytes" -v size="$current_size" \
+                'BEGIN { printf "%d", bitrate * target / size * 0.965 }'
+        )"
+        if (( next_video_k <= video_k )); then
+            break
+        fi
+        video_k="$next_video_k"
+    else
+        next_video_k="$(
+            awk -v bitrate="$video_k" -v target="$target_bytes" -v size="$current_size" \
+                'BEGIN { printf "%d", bitrate * target / size * 0.93 }'
+        )"
+        if (( next_video_k < min_video_k )); then
+            break
+        fi
+        video_k="$next_video_k"
+    fi
+done
+
+if (( best_size == 0 )); then
+    die "could not produce an output at or below ${target_mb} MB"
+fi
+
+mkdir -p "$(dirname "$output")"
+mv "$best_file" "$output"
+final_size="$(filesize "$output")"
+
+if (( final_size > target_bytes )); then
+    rm -f "$output"
+    die "internal size check failed; oversized output was removed"
+fi
+
+printf 'Saved: %s (%s bytes)\n' "$output" "$final_size"
