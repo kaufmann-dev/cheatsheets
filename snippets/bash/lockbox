@@ -87,6 +87,11 @@ write_config() {
   chmod 600 "$config_file"
 }
 
+open_mount_dir() {
+  printf 'Opening: %s\n' "$mount_dir"
+  xdg-open "$mount_dir" >/dev/null 2>&1 &
+}
+
 configure() {
   if [[ -f $config_file ]]; then
     read_config
@@ -115,6 +120,7 @@ configure() {
 mount_volume() {
   require_command sirikali
   require_command mountpoint
+  require_command xdg-open
   read_config
 
   [[ -d $volume_dir ]] || die "encrypted volume path is not a directory: $volume_dir"
@@ -122,6 +128,7 @@ mount_volume() {
 
   if mountpoint -q "$mount_dir"; then
     printf 'Already mounted: %s\n' "$mount_dir"
+    open_mount_dir
     return 0
   fi
 
@@ -130,8 +137,14 @@ mount_volume() {
   IFS= read -r -s password
   printf '\n' >&2
 
-  printf '%s\n' "$password" | sirikali -e -b stdin -d "$volume_dir" -z "$mount_dir" -k rw
+  if ! printf '%s\n' "$password" | sirikali -e -b stdin -d "$volume_dir" -z "$mount_dir" -k rw; then
+    unset password
+    die "mount failed"
+  fi
   unset password
+
+  mountpoint -q "$mount_dir" || die "mount command finished but mount point is not mounted: $mount_dir"
+  open_mount_dir
 }
 
 unmount_volume() {
