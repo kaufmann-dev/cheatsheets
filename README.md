@@ -10,5 +10,5 @@ The repository is organized into the following main directories:
 *   **`designs/`**: Holds design system documentation, patterns, or architectural references.
 *   **`guides/`**: Contains step-by-step tutorials, walkthroughs, and broader instructional documents.
 *   **`prompts/`**: A collection of AI prompts, templates, and contextual instructions for interacting with LLMs.
-*   **`snippets/`**: Reusable code snippets, configuration blocks, and small functional examples.
+*   **`utilities/`**: Reusable helper scripts, browser utilities, and small functional examples.
 *   **`stacks/`**: A collection of carefully crafted technology stacks to use as the base for new projects.
