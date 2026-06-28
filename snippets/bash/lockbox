@@ -5,12 +5,60 @@ program_name=${0##*/}
 config_dir=${XDG_CONFIG_HOME:-"$HOME/.config"}/lockbox
 config_file=$config_dir/config
 
+red=$'\033[31m'
+green=$'\033[32m'
+yellow=$'\033[33m'
+reset=$'\033[0m'
+
+can_color_stdout() {
+  [[ -t 1 && -z ${NO_COLOR-} && ${TERM-} != "dumb" ]]
+}
+
+can_color_stderr() {
+  [[ -t 2 && -z ${NO_COLOR-} && ${TERM-} != "dumb" ]]
+}
+
+print_success() {
+  if can_color_stdout; then
+    printf '%s%s%s\n' "$green" "$*" "$reset"
+  else
+    printf '%s\n' "$*"
+  fi
+}
+
+print_warning() {
+  if can_color_stdout; then
+    printf '%s%s%s\n' "$yellow" "$*" "$reset"
+  else
+    printf '%s\n' "$*"
+  fi
+}
+
+print_error() {
+  if can_color_stderr; then
+    printf '%s%s%s\n' "$red" "$*" "$reset" >&2
+  else
+    printf '%s\n' "$*" >&2
+  fi
+}
+
+print_command_error() {
+  local line
+
+  while IFS= read -r line || [[ -n $line ]]; do
+    line=${line#Password: }
+    line=${line#Password:}
+    [[ -z $line ]] && continue
+    print_error "$line"
+  done <<<"$1"
+}
+
 usage() {
   printf 'Usage: %s {config|mount|unmount}\n' "$program_name" >&2
 }
 
 die() {
-  printf '%s: %s\n' "$program_name" "$*" >&2
+  print_error "$program_name: $*"
   exit 1
 }
 
@@ -88,7 +136,7 @@ write_config() {
 }
 
 open_mount_dir() {
-  printf 'Opening: %s\n' "$mount_dir"
+  print_success "Opening: $mount_dir"
   xdg-open "$mount_dir" >/dev/null 2>&1 &
 }
 
@@ -132,7 +180,7 @@ configure() {
   fi
 
   write_config "$new_volume_dir" "$new_mount_dir"
-  printf 'Configured %s\n' "$config_file"
+  print_success "Configured $config_file"
 }
 
 mount_volume() {
@@ -144,23 +192,24 @@ mount_volume() {
   [[ -d $volume_dir ]] || die "encrypted volume path is not a directory: $volume_dir"
 
   if mountpoint -q "$mount_dir"; then
-    printf 'Already mounted: %s\n' "$mount_dir"
+    print_warning "Already mounted: $mount_dir"
     open_mount_dir
     return 0
   fi
 
   prepare_mount_dir
 
-  local password
+  local password output
   printf 'Password: ' >&2
   IFS= read -r -s password
   printf '\n' >&2
 
-  if ! printf '%s\n' "$password" | sirikali -e -b stdin -d "$volume_dir" -z "$mount_dir" -k rw; then
+  if ! output=$(printf '%s\n' "$password" | sirikali -e -b stdin -d "$volume_dir" -z "$mount_dir" -k rw 2>&1); then
     unset password
+    print_command_error "$output"
     die "mount failed"
   fi
-  unset password
+  unset password output
 
   mountpoint -q "$mount_dir" || die "mount command finished but mount point is not mounted: $mount_dir"
   open_mount_dir
@@ -172,19 +221,22 @@ unmount_volume() {
   read_config
 
   if ! mountpoint -q "$mount_dir"; then
-    printf 'Not mounted: %s\n' "$mount_dir"
+    print_warning "Not mounted: $mount_dir"
     return 0
   fi
 
-  if ! sirikali -u -d "$mount_dir"; then
+  local output
+  if ! output=$(sirikali -u -d "$mount_dir" 2>&1); then
+    print_command_error "$output"
     die "unmount failed: $mount_dir"
   fi
+  unset output
 
   if mountpoint -q "$mount_dir"; then
     die "unmount command finished but mount point is still mounted: $mount_dir"
   fi
 
-  printf 'Unmounted: %s\n' "$mount_dir"
+  print_success "Unmounted: $mount_dir"
 }
 
 case ${1-} in
