@@ -7,6 +7,7 @@ Usage:
   video-size INPUT TARGET_MB
   video-size INPUT TARGET_MB -o OUTPUT
   video-size INPUT TARGET_MB --video-only
+  video-size INPUT TARGET_MB -c h265
 
 Encode an MP4 that fits at or below TARGET_MB.
 
@@ -16,6 +17,7 @@ audio quality. It only saves a final output after verifying the byte size.
 Options:
   -o, --output FILE   Write to FILE instead of INPUT-TARGET_MB.mp4
   --video-only        Drop audio and use the full size budget for video
+  -c, --codec CODEC   Video codec: h264 (default) or h265
   -h, --help          Show this help
 EOF
 }
@@ -161,6 +163,14 @@ encode_attempt() {
     local out_fps="$3"
     local filter="scale=-2:${out_height}:flags=lanczos,fps=${out_fps}"
     local audio_args=()
+    local encoder='libx264'
+    local pass1_args=()
+    local pass2_args=()
+    local output_video_args=()
+
+    if (( hdr_detected )); then
+        filter="zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,${filter}"
+    fi
 
     if (( use_audio )); then
         audio_args=(-map 0:a:0 -c:a aac -b:a "${audio_k}k")
@@ -171,23 +181,34 @@ encode_attempt() {
         audio_args=(-an)
     fi
 
-    rm -f "$attempt_file" "${passlog}"-0.log "${passlog}"-0.log.mbtree
+    if [[ "$codec" == h265 ]]; then
+        encoder='libx265'
+        output_video_args=(-tag:v hvc1)
+        pass1_args=(-x265-params "pass=1:stats=${passlog}")
+        pass2_args=(-x265-params "pass=2:stats=${passlog}")
+        rm -f "$attempt_file" "$passlog" "${passlog}.cutree"
+    else
+        pass1_args=(-pass 1 -passlogfile "$passlog")
+        pass2_args=(-pass 2 -passlogfile "$passlog")
+        rm -f "$attempt_file" "${passlog}"-0.log "${passlog}"-0.log.mbtree
+    fi
 
     ffmpeg -y -v error -i "$input" \
         -map 0:v:0 \
         -vf "$filter" \
-        -c:v libx264 -preset medium -b:v "${video_k}k" \
+        -c:v "$encoder" -preset medium -b:v "${video_k}k" \
         -pix_fmt yuv420p \
-        -pass 1 -passlogfile "$passlog" \
-        -an -f mp4 /dev/null
+        "${pass1_args[@]}" \
+        -an -f null -
 
     ffmpeg -y -v error -i "$input" \
         -map 0:v:0 "${audio_args[@]}" \
         -vf "$filter" \
-        -c:v libx264 -preset medium -b:v "${video_k}k" \
+        -c:v "$encoder" -preset medium -b:v "${video_k}k" \
         -pix_fmt yuv420p \
         -movflags +faststart \
-        -pass 2 -passlogfile "$passlog" \
+        "${pass2_args[@]}" \
+        "${output_video_args[@]}" \
         "$attempt_file"
 }
 
@@ -195,6 +216,7 @@ input=''
 target_mb=''
 output=''
 video_only=0
+codec='h264'
 
 while (($#)); do
     case "$1" in
@@ -209,6 +231,11 @@ while (($#)); do
             ;;
         --video-only)
             video_only=1
+            ;;
+        -c|--codec)
+            shift
+            [[ $# -gt 0 ]] || die "--codec requires a value (h264 or h265)"
+            codec="$1"
             ;;
         -*)
             die "unknown option: $1"
@@ -231,10 +258,17 @@ done
 [[ -f "$input" ]] || die "input is not a regular file: $input"
 positive_number "$target_mb" || die "target size must be a positive number"
 
+if [[ "$codec" != h264 && "$codec" != h265 ]]; then
+    die "unsupported codec: $codec (use h264 or h265)"
+fi
+
 need_command ffmpeg
 need_command ffprobe
 need_command awk
 need_encoder libx264
+if [[ "$codec" == h265 ]]; then
+    need_encoder libx265
+fi
 
 target_bytes="$(integer_bytes "$target_mb")"
 [[ "$target_bytes" =~ ^[0-9]+$ ]] || die "could not parse target size"
@@ -246,13 +280,6 @@ fi
 if [[ -e "$output" && "$input" -ef "$output" ]]; then
     die "output path must not be the input file"
 fi
-
-duration="$(
-    probe -show_entries format=duration \
-        -of default=noprint_wrappers=1:nokey=1 \
-        "$input"
-)"
-positive_number "$duration" || die "could not read a positive input duration"
 
 source_width="$(
     probe -select_streams v:0 -show_entries stream=width \
@@ -283,6 +310,35 @@ source_fps="$(
             printf "%.3f", fps
         }'
 )"
+
+duration="$(
+    probe -show_entries format=duration \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input"
+)"
+
+if ! positive_number "$duration"; then
+    duration="$(
+        probe -select_streams v:0 -show_entries stream=duration \
+            -of default=noprint_wrappers=1:nokey=1 \
+            "$input"
+    )"
+fi
+
+if ! positive_number "$duration"; then
+    frame_count="$(
+        probe -select_streams v:0 -count_frames \
+            -show_entries stream=nb_read_frames \
+            -of default=noprint_wrappers=1:nokey=1 \
+            "$input"
+    )"
+    if [[ "$frame_count" =~ ^[0-9]+$ ]] && (( frame_count > 0 )); then
+        duration="$(awk -v frames="$frame_count" -v fps="$source_fps" \
+            'BEGIN { printf "%.6f", frames / fps }')"
+    fi
+fi
+
+positive_number "$duration" || die "could not read a positive input duration"
 
 audio_stream="$(
     probe -select_streams a:0 -show_entries stream=index \
@@ -322,7 +378,14 @@ if [[ -n "$audio_stream" && "$video_only" -eq 0 ]]; then
     fi
 fi
 
-min_video_k=70
+if [[ "$codec" == h265 ]]; then
+    min_video_k=45
+    bpp_floor='0.038'
+else
+    min_video_k=70
+    bpp_floor='0.060'
+fi
+
 video_k=$(( total_k - audio_k ))
 (( video_k >= min_video_k )) ||
     die "target is too small after reserving audio budget"
@@ -337,13 +400,25 @@ cleanup() {
 }
 trap cleanup EXIT
 
+hdr_detected=0
+color_transfer="$(
+    probe -select_streams v:0 -show_entries stream=color_transfer \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$input"
+)"
+if [[ "$color_transfer" == smpte2084 || "$color_transfer" == arib-std-b67 ]]; then
+    if ! ffmpeg -v quiet -hide_banner -filters | awk '$2 == "zscale" { found=1 } END { exit !found }'; then
+        die "HDR input detected but ffmpeg is missing the zscale filter (libzimg)"
+    fi
+    hdr_detected=1
+fi
+
 printf 'Input: %s\n' "$input"
 printf 'Target: %s MB (%s bytes)\n' "$target_mb" "$target_bytes"
 printf 'Audio: %s\n' "$audio_label"
 
 best_size=0
 attempts=7
-bpp_floor='0.060'
 
 for ((attempt = 1; attempt <= attempts; attempt++)); do
     read -r out_height out_fps < <(choose_geometry "$video_k" "$bpp_floor")
