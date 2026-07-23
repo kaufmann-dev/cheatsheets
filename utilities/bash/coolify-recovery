@@ -169,6 +169,28 @@ path_used_percent() {
     df --output=pcent "$path" 2>/dev/null | tail -n 1 | tr -dc '0-9'
 }
 
+IMAGE_TOTAL=''
+IMAGE_ACTIVE=''
+IMAGE_SIZE=''
+IMAGE_RECLAIMABLE=''
+IMAGE_RECLAIMABLE_PERCENT=''
+
+parse_image_disk_usage() {
+    local system_df="$1"
+    local image_line
+
+    IMAGE_TOTAL=''
+    IMAGE_ACTIVE=''
+    IMAGE_SIZE=''
+    IMAGE_RECLAIMABLE=''
+    IMAGE_RECLAIMABLE_PERCENT=''
+
+    image_line=$(printf '%s\n' "$system_df" | awk '$1 == "Images" {print; exit}')
+    if [[ -n "$image_line" ]]; then
+        read -r _ IMAGE_TOTAL IMAGE_ACTIVE IMAGE_SIZE IMAGE_RECLAIMABLE IMAGE_RECLAIMABLE_PERCENT <<< "$image_line"
+    fi
+}
+
 choose_swap_size() {
     # Automatic swap sizing based on free disk on /.
     # Thresholds intentionally leave free space after creating the swap file:
@@ -237,7 +259,9 @@ diagnose() {
     separator
 
     info "Docker disk usage"
-    "${DOCKER[@]}" system df
+    local docker_system_df
+    docker_system_df=$("${DOCKER[@]}" system df)
+    printf '%s\n' "$docker_system_df"
     separator
 
     info "BuildKit cache"
@@ -304,17 +328,20 @@ diagnose() {
         ok "BuildKit cache: $(bytes_to_gib "$total_cache_bytes") total, $(bytes_to_gib "$reclaimable_cache_bytes") reclaimable"
     fi
 
-    # --- Unused images ---
-    local dangling all_images
+    # --- Reclaimable images ---
+    local dangling image_reclaimable_bytes
     dangling=$("${DOCKER[@]}" images --filter 'dangling=true' -q | wc -l | tr -d ' ')
-    all_images=$("${DOCKER[@]}" images -q | wc -l | tr -d ' ')
+    parse_image_disk_usage "$docker_system_df"
+    image_reclaimable_bytes=$(parse_size_to_bytes "${IMAGE_RECLAIMABLE:-0B}")
 
-    if [[ "$dangling" -gt 5 ]] || [[ "$all_images" -gt 30 ]]; then
-        bad "Found $dangling dangling and $all_images total images."
+    if [[ -z "$IMAGE_TOTAL" ]]; then
+        warn "Could not determine Docker image disk usage."
+    elif [[ "$image_reclaimable_bytes" -gt $((2 * 1024 * 1024 * 1024)) ]]; then
+        bad "Images: $IMAGE_TOTAL total, $IMAGE_ACTIVE active, $dangling dangling; $IMAGE_RECLAIMABLE reclaimable of $IMAGE_SIZE $IMAGE_RECLAIMABLE_PERCENT."
         need_cleanup=1
         ((++problems))
     else
-        ok "$all_images images, $dangling dangling"
+        ok "Images: $IMAGE_TOTAL total, $IMAGE_ACTIVE active, $dangling dangling; $IMAGE_RECLAIMABLE reclaimable of $IMAGE_SIZE $IMAGE_RECLAIMABLE_PERCENT."
     fi
 
     # --- Recent OOM / disk errors in kernel log ---
@@ -390,7 +417,19 @@ docker_cleanup() {
     separator
     info "Post-cleanup disk state:"
     df -hT
-    "${DOCKER[@]}" system df
+
+    local post_cleanup_df dangling
+    post_cleanup_df=$("${DOCKER[@]}" system df)
+    printf '%s\n' "$post_cleanup_df"
+    parse_image_disk_usage "$post_cleanup_df"
+    dangling=$("${DOCKER[@]}" images --filter 'dangling=true' -q | wc -l | tr -d ' ')
+
+    if [[ -n "$IMAGE_TOTAL" ]]; then
+        info "Images after cleanup: $IMAGE_TOTAL total, $IMAGE_ACTIVE active, $dangling dangling; $IMAGE_RECLAIMABLE reclaimable of $IMAGE_SIZE $IMAGE_RECLAIMABLE_PERCENT."
+    else
+        warn "Could not determine Docker image disk usage after cleanup."
+    fi
+
     "${DOCKER[@]}" builder du 2>/dev/null || warn "Could not read builder cache."
 }
 
