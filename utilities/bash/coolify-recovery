@@ -243,18 +243,14 @@ diagnose() {
     info "BuildKit cache"
     "${DOCKER[@]}" builder du 2>/dev/null || warn "Could not read builder cache."
     separator
-}
 
-# ---------------------------------------------------------------------------
-# 2. Analyse and flag problems
-# ---------------------------------------------------------------------------
+    info "Assessment"
 
-analyse() {
     local problems=0
-
-    NEED_SWAP=0
-    NEED_CACHE_PRUNE=0
-    NEED_IMAGE_PRUNE=0
+    local need_cleanup=0
+    local need_swap=0
+    local need_logs=0
+    local swap_blocked=0
 
     # --- Swap check ---
     local swap_total
@@ -264,11 +260,12 @@ analyse() {
         auto_size=$(choose_swap_size)
         if [[ "$auto_size" == "0G" ]]; then
             bad "No swap configured, and there is not enough free disk for automatic 2G/4G/8G swap creation."
+            swap_blocked=1
         else
-            bad "No swap configured. Recommended automatic swap size: $auto_size."
-            NEED_SWAP=1
+            bad "No swap configured. Recommended swap size: $auto_size."
+            need_swap=1
         fi
-        ((problems++))
+        ((++problems))
     else
         local swap_h
         swap_h=$(free -h | awk '/^Swap:/ {print $2}')
@@ -283,7 +280,8 @@ analyse() {
     disk_pct=$(path_used_percent "$docker_root")
     if [[ -n "$disk_pct" ]] && (( disk_pct >= 85 )); then
         bad "Docker root ($docker_root) is at ${disk_pct}% usage."
-        ((problems++))
+        need_cleanup=1
+        ((++problems))
     else
         ok "Docker root disk at ${disk_pct:-??}%"
     fi
@@ -296,8 +294,8 @@ analyse() {
 
     if [[ "$cache_bytes" -gt $((2 * 1024 * 1024 * 1024)) ]]; then
         bad "BuildKit cache is large: $(bytes_to_gib "$cache_bytes")"
-        NEED_CACHE_PRUNE=1
-        ((problems++))
+        need_cleanup=1
+        ((++problems))
     else
         ok "BuildKit cache size looks acceptable: $(bytes_to_gib "$cache_bytes")"
     fi
@@ -309,8 +307,8 @@ analyse() {
 
     if [[ "$dangling" -gt 5 ]] || [[ "$all_images" -gt 30 ]]; then
         bad "Found $dangling dangling and $all_images total images."
-        NEED_IMAGE_PRUNE=1
-        ((problems++))
+        need_cleanup=1
+        ((++problems))
     else
         ok "$all_images images, $dangling dangling"
     fi
@@ -322,20 +320,37 @@ analyse() {
             | grep -ciE 'oom|killed|no space|overlay|buildkit' || true)
         if [[ "$oom_hits" -gt 0 ]]; then
             bad "Kernel log mentions OOM/disk issues ($oom_hits hits in last 30 min)."
-            ((problems++))
+            need_logs=1
+            ((++problems))
         fi
     fi
 
     separator
     if [[ "$problems" -eq 0 ]]; then
         ok "No obvious problems detected."
+        ok "No recovery action recommended."
     else
         warn "$problems problem(s) detected."
+        info "Recommendations"
+
+        if [[ "$need_cleanup" -eq 1 ]]; then
+            warn "Run: coolify-recovery cleanup"
+        fi
+
+        if [[ "$need_swap" -eq 1 ]]; then
+            warn "Run: coolify-recovery swap auto"
+        elif [[ "$swap_blocked" -eq 1 ]]; then
+            warn "Free disk space until at least 4.0GiB is available, then run: coolify-recovery swap auto"
+        fi
+
+        if [[ "$need_logs" -eq 1 ]]; then
+            warn "After the next failed deployment, run: coolify-recovery logs"
+        fi
     fi
 }
 
 # ---------------------------------------------------------------------------
-# 3. Docker cleanup
+# 2. Docker cleanup
 # ---------------------------------------------------------------------------
 
 docker_cleanup() {
@@ -369,7 +384,7 @@ docker_cleanup() {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Add swap
+# 3. Add swap
 # ---------------------------------------------------------------------------
 
 add_swap() {
@@ -452,7 +467,7 @@ ensure_swap_fstab() {
 }
 
 # ---------------------------------------------------------------------------
-# 5. Collect failure logs
+# 4. Collect failure logs
 # ---------------------------------------------------------------------------
 
 collect_logs() {
@@ -481,7 +496,7 @@ collect_logs() {
 }
 
 # ---------------------------------------------------------------------------
-# 6. Restart Docker
+# 5. Restart Docker
 # ---------------------------------------------------------------------------
 
 restart_docker() {
@@ -501,58 +516,24 @@ restart_docker() {
 menu() {
     echo ''
     info "Coolify Deployment Recovery"
-    echo "  1) Diagnose        – show disk, memory, swap, Docker state"
-    echo "  2) Analyse         – flag likely problems"
-    echo "  3) Docker cleanup  – prune stopped containers, unused images, BuildKit cache"
-    echo "  4) Add swap        – create auto-sized 2G/4G/8G swap file"
-    echo "  5) Collect logs    – grab recent Docker and kernel logs"
-    echo "  6) Restart Docker  – last resort, interrupts containers"
-    echo "  7) Auto-fix        – run analyse → cleanup → swap if needed"
+    echo "  1) Diagnose        – inspect server state and recommend recovery actions"
+    echo "  2) Docker cleanup  – prune stopped containers, unused images, BuildKit cache"
+    echo "  3) Add swap        – create auto-sized 2G/4G/8G swap file"
+    echo "  4) Collect logs    – grab recent Docker and kernel logs"
+    echo "  5) Restart Docker  – last resort, interrupts containers"
     echo "  q) Quit"
     echo ''
-}
-
-auto_fix() {
-    NEED_SWAP=0
-    NEED_CACHE_PRUNE=0
-    NEED_IMAGE_PRUNE=0
-
-    info "Running diagnostics."
-    diagnose
-    analyse
-
-    if [[ "$NEED_CACHE_PRUNE" -eq 1 ]] || [[ "$NEED_IMAGE_PRUNE" -eq 1 ]]; then
-        docker_cleanup
-    else
-        ok "Docker cleanup not needed."
-    fi
-
-    if [[ "$NEED_SWAP" -eq 1 ]]; then
-        local auto_size
-        auto_size=$(choose_swap_size)
-        if [[ "$auto_size" == "0G" ]]; then
-            bad "Swap is needed, but there is not enough free disk for automatic swap creation."
-        elif confirm "Add $auto_size swap file?"; then
-            add_swap "$auto_size"
-        fi
-    fi
-
-    separator
-    ok "Auto-fix complete. Retry one deployment in Coolify."
-    warn "If it fails again, run option 5 (Collect logs) immediately after the failed deployment."
 }
 
 usage() {
     cat <<'USAGE'
 Usage:
-  coolify-recovery.sh                 # interactive menu
-  coolify-recovery.sh diagnose
-  coolify-recovery.sh analyse|analyze
-  coolify-recovery.sh cleanup
-  coolify-recovery.sh swap [auto|2G|4G|8G]
-  coolify-recovery.sh logs
-  coolify-recovery.sh restart
-  coolify-recovery.sh auto
+  coolify-recovery                 # interactive menu
+  coolify-recovery diagnose
+  coolify-recovery cleanup
+  coolify-recovery swap [auto|2G|4G|8G]
+  coolify-recovery logs
+  coolify-recovery restart
 USAGE
 }
 
@@ -566,12 +547,10 @@ main() {
     if [[ $# -gt 0 ]]; then
         case "$1" in
             diagnose)       diagnose ;;
-            analyse|analyze) diagnose; analyse ;;
             cleanup)        docker_cleanup ;;
             swap)           add_swap "${2:-auto}" ;;
             logs)           collect_logs ;;
             restart)        restart_docker ;;
-            auto)           auto_fix ;;
             -h|--help|help) usage ;;
             *)              bad "Unknown command: $1"; usage; exit 1 ;;
         esac
@@ -580,16 +559,14 @@ main() {
 
     while true; do
         menu
-        printf "%bChoose [1-7/q]:%b " "$CYN" "$RST"
+        printf "%bChoose [1-5/q]:%b " "$CYN" "$RST"
         read -r choice
         case "$choice" in
             1) diagnose ;;
-            2) diagnose; analyse ;;
-            3) docker_cleanup ;;
-            4) add_swap auto ;;
-            5) collect_logs ;;
-            6) restart_docker ;;
-            7) auto_fix ;;
+            2) docker_cleanup ;;
+            3) add_swap auto ;;
+            4) collect_logs ;;
+            5) restart_docker ;;
             q|Q) echo 'Bye.'; exit 0 ;;
             *) warn "Invalid choice." ;;
         esac
