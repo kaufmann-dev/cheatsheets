@@ -286,18 +286,22 @@ diagnose() {
         ok "Docker root disk at ${disk_pct:-??}%"
     fi
 
-    # --- BuildKit cache size ---
-    local builder_du total_size cache_bytes
+    # --- Reclaimable BuildKit cache ---
+    local builder_du total_size reclaimable_size total_cache_bytes reclaimable_cache_bytes
     builder_du=$("${DOCKER[@]}" builder du 2>/dev/null || true)
     total_size=$(printf '%s\n' "$builder_du" | awk '/^Total:/ {print $2; exit}')
-    cache_bytes=$(parse_size_to_bytes "${total_size:-0B}")
+    reclaimable_size=$(printf '%s\n' "$builder_du" | awk '/^Reclaimable:/ {print $2; exit}')
+    total_cache_bytes=$(parse_size_to_bytes "${total_size:-0B}")
+    reclaimable_cache_bytes=$(parse_size_to_bytes "${reclaimable_size:-0B}")
 
-    if [[ "$cache_bytes" -gt $((2 * 1024 * 1024 * 1024)) ]]; then
-        bad "BuildKit cache is large: $(bytes_to_gib "$cache_bytes")"
+    if [[ -z "$reclaimable_size" ]]; then
+        warn "Could not determine how much BuildKit cache is reclaimable."
+    elif [[ "$reclaimable_cache_bytes" -gt $((2 * 1024 * 1024 * 1024)) ]]; then
+        bad "BuildKit cache has $(bytes_to_gib "$reclaimable_cache_bytes") reclaimable out of $(bytes_to_gib "$total_cache_bytes") total."
         need_cleanup=1
         ((++problems))
     else
-        ok "BuildKit cache size looks acceptable: $(bytes_to_gib "$cache_bytes")"
+        ok "BuildKit cache: $(bytes_to_gib "$total_cache_bytes") total, $(bytes_to_gib "$reclaimable_cache_bytes") reclaimable"
     fi
 
     # --- Unused images ---
@@ -365,22 +369,29 @@ docker_cleanup() {
     if confirm "Prune stopped containers?"; then
         "${DOCKER[@]}" container prune --force
         ok "Stopped containers pruned."
+    else
+        warn "Stopped container prune skipped."
     fi
 
     if confirm "Prune all images not referenced by containers?"; then
         "${DOCKER[@]}" image prune --all --force
         ok "Unused images pruned."
+    else
+        warn "Unused image prune skipped."
     fi
 
     if confirm "Prune BuildKit cache?"; then
         "${DOCKER[@]}" builder prune --all --force
         ok "BuildKit cache pruned."
+    else
+        warn "BuildKit cache prune skipped."
     fi
 
     separator
     info "Post-cleanup disk state:"
     df -hT
     "${DOCKER[@]}" system df
+    "${DOCKER[@]}" builder du 2>/dev/null || warn "Could not read builder cache."
 }
 
 # ---------------------------------------------------------------------------
