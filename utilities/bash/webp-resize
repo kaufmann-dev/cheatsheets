@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: webp-resize [OPTIONS]
+
+Resize supported images in the current directory and save them as WebP files.
+Outputs use the name SOURCE-resized.webp and existing files are not overwritten.
+
+Options:
+  -q, --quality NUMBER  WebP quality from 0 to 100 (default: 75)
+  -w, --width PIXELS    Output width, or 0 to preserve the aspect ratio
+  -h, --height PIXELS   Output height, or 0 to preserve the aspect ratio
+      --help            Show this help
+
+At least one of --width or --height must be greater than zero.
+Supported input formats: jpg, jpeg, png, bmp, tiff, webp.
+EOF
+}
+
+die() {
+    printf 'webp-resize: %s\n' "$*" >&2
+    exit 1
+}
+
+require_value() {
+    local option="$1"
+    local value="${2-}"
+
+    [[ -n "$value" ]] || die "$option requires a value"
+}
+
+quality=75
+width=0
+height=0
+
+while (( $# > 0 )); do
+    case "$1" in
+        -q | --quality)
+            require_value "$1" "${2-}"
+            quality="$2"
+            shift 2
+            ;;
+        -w | --width)
+            require_value "$1" "${2-}"
+            width="$2"
+            shift 2
+            ;;
+        -h | --height)
+            require_value "$1" "${2-}"
+            height="$2"
+            shift 2
+            ;;
+        --help)
+            usage
+            exit 0
+            ;;
+        *)
+            die "unknown option: $1"
+            ;;
+    esac
+done
+
+[[ "$quality" =~ ^[0-9]+$ ]] || die 'quality must be an integer from 0 to 100'
+quality=$((10#$quality))
+(( quality <= 100 )) || die 'quality must be an integer from 0 to 100'
+[[ "$width" =~ ^[0-9]+$ ]] || die 'width must be a non-negative integer'
+width=$((10#$width))
+[[ "$height" =~ ^[0-9]+$ ]] || die 'height must be a non-negative integer'
+height=$((10#$height))
+(( width > 0 || height > 0 )) || die 'at least one of width or height must be greater than zero'
+
+command -v cwebp >/dev/null 2>&1 || die 'missing required command: cwebp'
+
+shopt -s nullglob nocaseglob
+image_files=(*.jpg *.jpeg *.png *.bmp *.tiff *.webp)
+
+(( ${#image_files[@]} > 0 )) || die 'no supported image files found'
+
+converted=0
+skipped=0
+failed=0
+
+for image in "${image_files[@]}"; do
+    output="${image%.*}-resized.webp"
+
+    if [[ -e "$output" ]]; then
+        printf 'Skipping %s: %s already exists.\n' "$image" "$output" >&2
+        (( skipped += 1 ))
+        continue
+    fi
+
+    if cwebp -quiet -q "$quality" "$image" -resize "$width" "$height" -o "$output"; then
+        printf '%s -> %s\n' "$image" "$output"
+        (( converted += 1 ))
+    else
+        rm -f -- "$output"
+        printf 'Failed to resize %s.\n' "$image" >&2
+        (( failed += 1 ))
+    fi
+done
+
+printf 'Converted: %d; skipped: %d; failed: %d.\n' "$converted" "$skipped" "$failed"
+(( failed == 0 )) || exit 1
+(( converted > 0 )) || exit 1

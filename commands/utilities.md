@@ -10,6 +10,13 @@ video-size input.mp4 4 --video-only
 ```
 *Drops audio and uses the full size budget for video.*
 
+#### Resize images to WebP
+```bash
+webp-resize --width 1200 --quality 75
+webp-resize --height 800
+```
+*Resizes supported images in the current directory, preserves the aspect ratio when one dimension is omitted, and writes non-overwriting `*-resized.webp` outputs. Requires `cwebp`.*
+
 #### Resize video to specific size .webm (Advanced, Includes Audio)
 ```bash
 python restrict.py -a -s 4 input.mp4
