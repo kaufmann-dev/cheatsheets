@@ -17,6 +17,12 @@ webp-resize --height 800
 ```
 *Resizes supported images in the current directory, preserves the aspect ratio when one dimension is omitted, and writes non-overwriting `*-resized.webp` outputs. Requires `cwebp`.*
 
+#### Apply a CMYK halftone screen
+```bash
+cmyk-screen render input.webp output.webp
+```
+*Renders the dark CMYK ordered-dither effect using ImageMagick. Tune the threshold map, tonal levels, contrast stretch, colorspaces, WebP encoding, and metadata stripping with `cmyk-screen render --help`.*
+
 #### Resize video to specific size .webm (Advanced, Includes Audio)
 ```bash
 python restrict.py -a -s 4 input.mp4
