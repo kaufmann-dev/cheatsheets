@@ -69,7 +69,7 @@ In Coolify:
 5. Enter the Axiom dataset name and the restricted API token.
 6. Save the configuration.
 
-Keep the Axiom token only in Coolify's Log Drain configuration. Do not add it to the application repository, `.env.example`, `nixpacks.toml`, or the application's runtime environment variables.
+Keep the Axiom token only in Coolify's Log Drain configuration. Do not add it to the application repository, `.env.example`, `railpack.json`, or the application's runtime environment variables.
 
 ## 6. Enable the Drain for the Application
 
